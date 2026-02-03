@@ -25,7 +25,7 @@ class UserSeeder extends Seeder
 
         $schools = \App\Models\School::all();
 
-        foreach ($schools as $school) {
+        foreach ($schools as $schoolIndex => $school) {
             // 1. Create Admin
             $admin = \App\Models\User::firstOrCreate(
                 ['email' => 'admin@' . strtolower(str_replace(' ', '', $school->name)) . '.com'],
@@ -68,10 +68,14 @@ class UserSeeder extends Seeder
                 $levels = \App\Models\Level::where('school_id', $school->id)->get();
 
                 if ($levels->count() > 0) {
-                if ($levels->count() > 0) {
                     for ($j = 1; $j <= 10; $j++) {
+                         // Generate standard numeric NIS: Year + SchoolIndex(2) + Sequence(4)
+                         // e.g. 2024010001
+                         $studentSeq = ($i - 1) * 10 + $j;
+                         $nis = date('Y') . sprintf('%02d', $schoolIndex + 1) . sprintf('%04d', $studentSeq);
+
                          \App\Models\Student::firstOrCreate(
-                            ['nis' => "NIS{$school->id}{$i}{$j}"], // Unique NIS logic
+                            ['nis' => $nis],
                             [
                                 'school_id' => $school->id,
                                 'parent_user_id' => $wali->id, // Link to the Wali
@@ -89,7 +93,6 @@ class UserSeeder extends Seeder
                             ]
                         );
                     }
-                }
                 }
             }
         }
