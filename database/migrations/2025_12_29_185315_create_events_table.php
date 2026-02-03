@@ -24,6 +24,15 @@ return new class extends Migration
             $table->enum('participation_type', ['MANDATORY', 'OPTIONAL']);
             $table->timestamps();
         });
+
+        Schema::create('event_level', function (Blueprint $table) {
+            $table->id();
+            $table->foreignUlid('event_id')->constrained()->cascadeOnDelete();
+            $table->foreignUlid('level_id')->constrained()->cascadeOnDelete();
+            $table->timestamps();
+
+            $table->unique(['event_id', 'level_id']);
+        });
     }
 
     /**
