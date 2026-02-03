@@ -22,7 +22,6 @@ class UserSeeder extends Seeder
             ]
         );
         $superAdmin->assignRole('super_admin');
-
         $schools = \App\Models\School::all();
 
         foreach ($schools as $schoolIndex => $school) {
