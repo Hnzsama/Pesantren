@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('sowan_schedules', function (Blueprint $table) {
-            $table->id();
+            $table->ulid('id')->primary();
             $table->foreignUlid('school_id')->nullable()->constrained('schools')->cascadeOnDelete(); // Consolidation
             $table->string('guest_name');
             $table->dateTime('request_date');

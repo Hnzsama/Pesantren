@@ -1,0 +1,22 @@
+# Super Admin Feature Wishlist
+
+1. **Audit Logs / Riwayat Aktivitas** 🛡️
+   - Mencatat siapa melakukan apa dan kapan (User, Action, Timestamp, IP).
+   - Penting untuk keamanan dan tracking kesalahan data.
+
+2. **Laporan Global / Keuangan Platform** 📊
+   - Rekapitulasi transaksi dari semua sekolah.
+   - Laporan pendapatan bersih platform (jika ada fee layanan).
+
+3. **Pengaturan Sistem Global (System Settings)** ⚙️
+   - Konfigurasi WA Gateway (Fonnte/Wablas).
+   - SMTP Mail Server.
+   - Maintenance Mode toggle.
+   - App Info (Logo, Nama, Copyright).
+
+4. **Manajemen Pengumuman (Broadcast)** 📢
+   - Kirim pesan sistem ke semua sekolah/admin.
+   - Notifikasi maintenance atau fitur baru.
+
+5. **Monitoring Server / Health Check** 🩺
+   - Status Database, Queue Worker, Disk Space, Cache.

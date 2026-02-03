@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('student_permissions', function (Blueprint $table) {
+            $table->ulid('id')->primary();
             $table->foreignUlid('school_id')->nullable()->constrained('schools')->cascadeOnDelete(); // Consolidation
             $table->foreignUlid('student_id')->nullable()->constrained('students')->cascadeOnDelete(); // Consolidation
             $table->string('student_name'); // Kept for history? Or should be removed if student_id is mandatory? Leaving as is to be safe.

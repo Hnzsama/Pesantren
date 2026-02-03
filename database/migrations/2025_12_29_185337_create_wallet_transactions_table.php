@@ -24,7 +24,7 @@ return new class extends Migration
             $table->decimal('payment_fee', 10, 2)->default(0);
             $table->decimal('admin_fee', 10, 2)->default(0);
             $table->string('description');
-            $table->enum('payment_method', ['gateway', 'cash', 'balance', 'payment_gateway'])->default('gateway');
+            $table->enum('payment_method', ['cash', 'payment_gateway'])->default('payment_gateway');
             $table->enum('status', ['UNPAID', 'PAID', 'CANCELLED'])->default('UNPAID');
             $table->timestamps();
         });

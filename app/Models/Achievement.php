@@ -2,33 +2,36 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Achievement extends Model
 {
-    use \App\Traits\HasSchoolScope;
-    protected $guarded = [];
+    use HasFactory, HasUlids;
+
+    protected $fillable = [
+        'title',
+        'school_id',
+        'student_id',
+        'date_achieved',
+        'description',
+        'images',
+    ];
 
     protected $casts = [
         'date_achieved' => 'date',
         'images' => 'array',
     ];
 
-    protected $appends = ['image_urls'];
-
-    public function student()
+    public function school(): BelongsTo
     {
-        return $this->belongsTo(Student::class);
+        return $this->belongsTo(School::class);
     }
 
-    public function getImageUrlsAttribute()
+    public function student(): BelongsTo
     {
-        if (empty($this->images)) {
-            return [];
-        }
-
-        return collect($this->images)->map(function ($image) {
-            return asset('storage/' . $image);
-        })->toArray();
+        return $this->belongsTo(Student::class);
     }
 }

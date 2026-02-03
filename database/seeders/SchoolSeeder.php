@@ -20,7 +20,7 @@ class SchoolSeeder extends Seeder
         ];
 
         foreach ($schools as $schoolName) {
-            \App\Models\School::firstOrCreate(
+            $school = \App\Models\School::firstOrCreate(
                 ['name' => $schoolName],
                 [
                     'address' => 'Jl. Contoh No. 123',
@@ -30,6 +30,20 @@ class SchoolSeeder extends Seeder
                     'website' => 'https://' . strtolower(str_replace(' ', '', $schoolName)) . '.com',
                 ]
             );
+
+            // Seed Departments for each school
+            $departments = [
+                ['name' => 'Madrasah Ibtidaiyah', 'code' => 'MI', 'description' => 'Setingkat SD'],
+                ['name' => 'Madrasah Tsanawiyah', 'code' => 'MTs', 'description' => 'Setingkat SMP'],
+                ['name' => 'Madrasah Aliyah', 'code' => 'MA', 'description' => 'Setingkat SMA'],
+            ];
+
+            foreach ($departments as $dept) {
+                \App\Models\Department::firstOrCreate(
+                    ['school_id' => $school->id, 'code' => $dept['code']],
+                    array_merge($dept, ['school_id' => $school->id])
+                );
+            }
         }
     }
 }

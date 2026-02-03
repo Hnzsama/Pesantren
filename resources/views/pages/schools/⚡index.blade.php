@@ -160,7 +160,7 @@ new class extends Component {
         </flux:table.columns>
 
         <flux:table.rows>
-            @foreach ($schools as $school)
+            @forelse ($schools as $school)
                 <flux:table.row :key="$school->id">
                     <flux:table.cell>
                         <div class="font-medium">{{ $school->name }}</div>
@@ -222,7 +222,20 @@ new class extends Component {
                         </flux:dropdown>
                     </flux:table.cell>
                 </flux:table.row>
-            @endforeach
+            @empty
+                <flux:table.row>
+                    <flux:table.cell colspan="7" class="text-center py-12">
+                        <div class="flex flex-col items-center gap-3">
+                            <flux:icon.building-office-2 class="w-12 h-12 text-zinc-300 dark:text-zinc-600" />
+                            <div>
+                                <flux:heading size="lg" class="text-zinc-500">Tidak ada sekolah</flux:heading>
+                                <flux:subheading>Belum ada data sekolah. Klik "Tambah Sekolah" untuk menambahkan.
+                                </flux:subheading>
+                            </div>
+                        </div>
+                    </flux:table.cell>
+                </flux:table.row>
+            @endforelse
         </flux:table.rows>
     </flux:table>
 

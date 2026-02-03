@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('video_lectures', function (Blueprint $table) {
-            $table->id();
+            $table->ulid('id')->primary();
             $table->string('title');
             $table->foreignUlid('school_id')->nullable()->constrained('schools')->cascadeOnDelete(); // Consolidation
             $table->string('youtube_url');
