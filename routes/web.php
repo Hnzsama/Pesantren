@@ -11,11 +11,17 @@ Route::view('dashboard', 'dashboard')
     ->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
+    // Dashboards
+    Route::livewire('dashboard/super-admin', 'pages::dashboard.super-admin')->name('dashboard.super-admin');
+    Route::livewire('dashboard/admin', 'pages::dashboard.admin')->name('dashboard.admin');
+
     Route::livewire('users', 'pages::users.index')->name('users');
     Route::livewire('schools', 'pages::schools.index')->name('schools.index');
     Route::livewire('roles', 'pages::roles.index')->name('roles.index');
     Route::livewire('payment-methods', 'pages::payment-methods.index')->name('payment-methods.index');
     Route::livewire('guardians', 'pages::guardians.index')->name('guardians.index');
+    Route::livewire('santri/import', 'pages::students.import')->name('students.import');
+    Route::livewire('santri/kenaikan-kelas', 'pages::students.promotion')->name('students.promotion');
     Route::livewire('santri', 'pages::students.index')->name('students.index');
     Route::livewire('jenjang', 'pages::departments.index')->name('departments.index');
     Route::livewire('kelas', 'pages::levels.index')->name('levels.index');
@@ -31,10 +37,14 @@ Route::middleware(['auth'])->group(function () {
     // Attendance (Event)
     Route::livewire('agenda-kegiatan/presensi', 'pages::events.attendance.⚡index')->name('events.attendance.index');
     Route::livewire('agenda-kegiatan/{eventId}/presensi-input', 'pages::events.attendance.⚡entry')->name('events.attendance.entry');
+    Route::livewire('agenda-kegiatan/{eventId}/scan', 'pages::events.attendance.⚡scan')->name('events.attendance.scan');
+    Route::livewire('agenda-kegiatan/detail', 'pages::events.attendance.⚡detail')->name('events.attendance.detail');
 
     // Attendance (Activity)
     Route::livewire('presensi-kegiatan', 'pages::activities.attendance.⚡index')->name('activities.attendance.index');
     Route::livewire('presensi-kegiatan/catat', 'pages::activities.attendance.⚡entry')->name('activities.attendance.entry');
+    Route::livewire('presensi-kegiatan/scan', 'pages::activities.attendance.⚡scan')->name('activities.attendance.scan');
+    Route::livewire('presensi-kegiatan/detail', 'pages::activities.attendance.⚡detail')->name('activities.attendance.detail');
 
     // Achievements
     Route::livewire('jadwal-sowan', 'pages::sowan-schedules.⚡index')->name('sowan-schedules.index');
@@ -51,6 +61,9 @@ Route::middleware(['auth'])->group(function () {
     // Feedback
     Route::livewire('feedback', 'pages::feedback.index')->name('feedback.index');
 
+    // Student Cards
+    Route::livewire('kartu-santri', 'pages::student-cards.index')->name('student-cards.index');
+    Route::livewire('permintaan-cetak-kartu', 'pages::student-card-requests.index')->name('student-card-requests.index');
 });
 
 require __DIR__.'/settings.php';

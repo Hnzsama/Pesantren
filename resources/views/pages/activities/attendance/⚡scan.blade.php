@@ -1,0 +1,269 @@
+<?php
+
+use App\Models\ActivityAttendance;
+use App\Models\Activity;
+use App\Models\Level;
+use App\Models\Student;
+use App\Models\StudentCard;
+use Livewire\Component;
+use Livewire\Attributes\Layout;
+use Flux\Flux;
+use Carbon\Carbon;
+
+new #[Layout('layouts.standalone')] class extends Component {
+    public $sessionDate;
+    public $selectedLevels = [];
+    public $selectedActivities = [];
+
+    public $scanInput = '';
+    public $lastScan = null;
+
+    public function mount()
+    {
+        $this->sessionDate = session('scanner_date', Carbon::today()->format('Y-m-d'));
+        $this->selectedLevels = session('scanner_levels', []);
+        $this->selectedActivities = session('scanner_activities', []);
+
+        if (empty($this->selectedLevels) || empty($this->selectedActivities)) {
+            return redirect()->route('activities.attendance.index');
+        }
+    }
+
+    public function updatedScanInput()
+    {
+        if (empty($this->scanInput)) {
+            return;
+        }
+
+        $this->processCardScan();
+    }
+
+    public function processCardScan()
+    {
+        $cardNumber = trim($this->scanInput);
+
+        if (empty($cardNumber)) {
+            return;
+        }
+
+        $user = auth()->user();
+        $schoolId = $user->hasRole('admin') ? $user->school_id : null;
+
+        $studentCard = StudentCard::query()
+            ->with('student')
+            ->where('card_number', $cardNumber)
+            ->first();
+
+        if (!$studentCard || !$studentCard->student) {
+            $this->setLastScan($cardNumber, null, 'error', 'Kartu tidak ditemukan', []);
+            $this->scanInput = '';
+            return;
+        }
+
+        $student = $studentCard->student;
+
+        if ($studentCard->status !== 'printed') {
+            $this->setLastScan($cardNumber, $student, 'error', 'Kartu belum diaktivasi', []);
+            $this->scanInput = '';
+            return;
+        }
+
+        if ($studentCard->expires_at && $studentCard->expires_at < now()) {
+            $this->setLastScan($cardNumber, $student, 'error', 'Kartu kadaluarsa', []);
+            $this->scanInput = '';
+            return;
+        }
+
+        if (!in_array($student->level_id, $this->selectedLevels)) {
+            $this->setLastScan($cardNumber, $student, 'error', 'Kelas tidak sesuai', []);
+            $this->scanInput = '';
+            return;
+        }
+
+        $recordedActivities = [];
+        $alreadyRecorded = [];
+
+        foreach ($this->selectedActivities as $activityId) {
+            $exists = ActivityAttendance::where([
+                'school_id' => $schoolId,
+                'student_id' => $student->id,
+                'activity_id' => $activityId,
+                'date' => $this->sessionDate,
+            ])->exists();
+
+            $activity = Activity::find($activityId);
+
+            if ($exists) {
+                if ($activity) {
+                    $alreadyRecorded[] = $activity->name;
+                }
+            } else {
+                ActivityAttendance::create([
+                    'school_id' => $schoolId,
+                    'student_id' => $student->id,
+                    'activity_id' => $activityId,
+                    'date' => $this->sessionDate,
+                    'status' => 'present',
+                ]);
+
+                if ($activity) {
+                    $recordedActivities[] = $activity->name;
+                }
+            }
+        }
+
+        if (empty($recordedActivities) && !empty($alreadyRecorded)) {
+            $this->setLastScan($cardNumber, $student, 'duplicate', 'Sudah tercatat', $alreadyRecorded);
+        } else {
+            $this->setLastScan($cardNumber, $student, 'success', null, $recordedActivities, $alreadyRecorded);
+        }
+
+        $this->scanInput = '';
+    }
+
+    private function setLastScan($cardNumber, $student, $status, $errorMessage, $activities, $alreadyRecorded = [])
+    {
+        $this->lastScan = [
+            'card_number' => $cardNumber,
+            'student_name' => $student ? $student->full_name : 'Tidak Diketahui',
+            'student_level' => $student ? $student->level->name ?? '' : '',
+            'status' => $status,
+            'error_message' => $errorMessage,
+            'activities' => $activities,
+            'already_recorded' => $alreadyRecorded,
+            'timestamp' => now()->format('H:i:s'),
+        ];
+    }
+
+    public function endSession()
+    {
+        session()->forget(['scanner_date', 'scanner_levels', 'scanner_activities']);
+        Flux::toast(variant: 'success', heading: 'Sesi Selesai', text: 'Sesi absensi telah ditutup.');
+        return redirect()->route('activities.attendance.index');
+    }
+
+    public function with(): array
+    {
+        $user = auth()->user();
+        $schoolId = $user->hasRole('admin') ? $user->school_id : null;
+
+        $levels = Level::query()
+            ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
+            ->whereIn('id', $this->selectedLevels)
+            ->get();
+
+        $activities = Activity::query()
+            ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
+            ->whereIn('id', $this->selectedActivities)
+            ->get();
+
+        return [
+            'levels' => $levels,
+            'activities' => $activities,
+        ];
+    }
+}; ?>
+
+<div class="min-h-screen flex flex-col items-center justify-center p-6">
+    <div class="w-full max-w-4xl space-y-8">
+        {{-- Header --}}
+        <div class="text-center space-y-2">
+            <flux:heading size="xl" level="1">Scanner Presensi</flux:heading>
+            <flux:subheading>
+                {{ \Carbon\Carbon::parse($sessionDate)->locale('id')->isoFormat('dddd, D MMMM Y') }}
+            </flux:subheading>
+
+            <div class="flex flex-wrap justify-center gap-2 mt-4">
+                @foreach($levels as $level)
+                    <flux:badge size="sm" color="zinc">{{ $level->name }}</flux:badge>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- Result Card --}}
+        <div class="relative">
+            @if($lastScan)
+                @php
+                    $statusColor = match ($lastScan['status']) {
+                        'success' => 'green',
+                        'duplicate' => 'blue',
+                        'error' => 'red',
+                        default => 'zinc'
+                    };
+                @endphp
+
+                <flux:card
+                    class="text-center space-y-6 !border-{{ $statusColor }}-200 dark:!border-{{ $statusColor }}-800 !bg-{{ $statusColor }}-50 dark:!bg-{{ $statusColor }}-900/10">
+                    <div>
+                        <flux:badge size="lg" color="{{ $statusColor }}" class="mb-4">
+                            @if($lastScan['status'] === 'success')
+                                BERHASIL
+                            @elseif($lastScan['status'] === 'duplicate')
+                                SUDAH TERCATAT
+                            @else
+                                {{ strtoupper($lastScan['error_message']) }}
+                            @endif
+                        </flux:badge>
+
+                        <h2 class="text-5xl font-bold text-zinc-900 dark:text-white mb-2">
+                            {{ $lastScan['student_name'] }}
+                        </h2>
+                        <div class="text-zinc-500 dark:text-zinc-400 text-2xl">
+                            {{ $lastScan['student_level'] }}
+                        </div>
+                    </div>
+
+                    @if(!empty($lastScan['activities']))
+                        <div class="py-4 border-t border-zinc-200 dark:border-zinc-700">
+                            <div class="text-sm text-zinc-500 mb-2">Kegiatan Tercatat</div>
+                            <div class="flex flex-wrap justify-center gap-2">
+                                @foreach($lastScan['activities'] as $activity)
+                                    <flux:badge color="green" icon="check">{{ $activity }}</flux:badge>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    @if(!empty($lastScan['already_recorded']))
+                        <div class="py-4 border-t border-zinc-200 dark:border-zinc-700">
+                            <div class="text-sm text-zinc-500 mb-2">Sebelumnya Tercatat</div>
+                            <div class="flex flex-wrap justify-center gap-2">
+                                @foreach($lastScan['already_recorded'] as $activity)
+                                    <flux:badge color="blue" icon="information-circle">{{ $activity }}</flux:badge>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                </flux:card>
+            @else
+                <flux:card class="text-center py-12 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700">
+                    <div class="mb-4">
+                        <flux:icon.qr-code class="w-24 h-24 mx-auto text-zinc-300 dark:text-zinc-600" />
+                    </div>
+                    <h3 class="text-3xl font-medium text-zinc-900 dark:text-white">Siap Memindai</h3>
+                    <p class="text-zinc-500 dark:text-zinc-400 mt-2">Silakan scan kartu santri pada alat scanner</p>
+                </flux:card>
+            @endif
+        </div>
+
+        {{-- Input Area --}}
+        <div x-data="{ focused: true }" x-init="$nextTick(() => $refs.scanInput.focus())" class="relative">
+            <flux:input wire:model.live="scanInput" x-ref="scanInput" @click="$refs.scanInput.focus()"
+                @blur="setTimeout(() => $refs.scanInput.focus(), 100)" placeholder="Input Scan..."
+                class="text-center text-2xl font-mono opacity-50 focus:opacity-100 transition-opacity p-4" />
+            <div class="text-center mt-2">
+                <span class="text-xs text-zinc-400">
+                    <span class="w-2 h-2 rounded-full bg-green-500 inline-block mr-1"></span>
+                    Auto-focus aktif
+                </span>
+            </div>
+        </div>
+
+        {{-- Footer Actions --}}
+        <div class="flex justify-center pt-8">
+            <flux:button variant="subtle" wire:click="endSession" icon="arrow-left">
+                Kembali ke Dashboard
+            </flux:button>
+        </div>
+    </div>
+</div>

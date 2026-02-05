@@ -72,32 +72,34 @@ new class extends Component {
             'is_active' => 'boolean',
         ]);
 
-        $data = [
-            'name' => $this->name,
-            'start_date' => $this->start_date ?: null,
-            'end_date' => $this->end_date ?: null,
-            'is_active' => $this->is_active,
-        ];
+        \Illuminate\Support\Facades\DB::transaction(function () use ($schoolId) {
+            // If setting this year as active, deactivate all others first
+            if ($this->is_active && $schoolId) {
+                AcademicYear::where('school_id', $schoolId)
+                    ->where('id', '!=', $this->yearId)
+                    ->update(['is_active' => false]);
+            }
 
-        if (!$this->yearId && $schoolId) {
-            $data['school_id'] = $schoolId;
-        }
+            $data = [
+                'name' => $this->name,
+                'start_date' => $this->start_date ?: null,
+                'end_date' => $this->end_date ?: null,
+                'is_active' => $this->is_active,
+            ];
 
-        if ($this->yearId) {
-            $year = AcademicYear::find($this->yearId);
-            $year->update($data);
-            Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Tahun ajaran berhasil diperbarui.');
-        } else {
-            $year = AcademicYear::create($data);
-            Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Tahun ajaran berhasil ditambahkan.');
-        }
+            if (!$this->yearId && $schoolId) {
+                $data['school_id'] = $schoolId;
+            }
 
-        // If this year is set to active, deactivate others
-        if ($this->is_active && $schoolId) {
-            AcademicYear::where('school_id', $schoolId)
-                ->where('id', '!=', $year->id)
-                ->update(['is_active' => false]);
-        }
+            if ($this->yearId) {
+                $year = AcademicYear::find($this->yearId);
+                $year->update($data);
+                Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Tahun ajaran berhasil diperbarui.');
+            } else {
+                $year = AcademicYear::create($data);
+                Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Tahun ajaran berhasil ditambahkan.');
+            }
+        });
 
         $this->modal('year-modal')->close();
         $this->reset(['yearId', 'name', 'start_date', 'end_date', 'is_active']);
@@ -111,16 +113,20 @@ new class extends Component {
 
         $schoolId = auth()->user()->school_id;
 
-        // If activating, deactivate others
-        if (!$year->is_active) {
-            AcademicYear::where('school_id', $schoolId)->update(['is_active' => false]);
-            $year->update(['is_active' => true]);
-            Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Tahun ajaran diaktifkan.');
-        } else {
-            // Optional: allow deactivating the only active one? usually yes.
-            $year->update(['is_active' => false]);
-            Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Tahun ajaran dinonaktifkan.');
-        }
+        \Illuminate\Support\Facades\DB::transaction(function () use ($year, $schoolId) {
+            // If activating, deactivate all others first
+            if (!$year->is_active) {
+                AcademicYear::where('school_id', $schoolId)
+                    ->where('id', '!=', $year->id)
+                    ->update(['is_active' => false]);
+
+                $year->update(['is_active' => true]);
+                Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Tahun ajaran diaktifkan.');
+            } else {
+                $year->update(['is_active' => false]);
+                Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Tahun ajaran dinonaktifkan.');
+            }
+        });
     }
 
     public function confirmDelete($id)

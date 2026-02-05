@@ -15,13 +15,27 @@
 
         <flux:sidebar.nav>
             <flux:sidebar.group :heading="__('Platform')">
+                @role('admin')
+                <flux:sidebar.item icon="building-library" :href="route('dashboard.admin')" :current="request()->routeIs('dashboard.admin')"
+                    wire:navigate>
+                    {{ __('Dashboard Pesantren') }}
+                </flux:sidebar.item>
+                @else
                 <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
                     wire:navigate>
                     {{ __('Dashboard') }}
                 </flux:sidebar.item>
+                @endrole
+
+                @role('super_admin')
+                <flux:sidebar.item icon="presentation-chart-line" :href="route('dashboard.super-admin')"
+                    :current="request()->routeIs('dashboard.super-admin')" wire:navigate>
+                    {{ __('Super Admin') }}
+                </flux:sidebar.item>
+                @endrole
             </flux:sidebar.group>
 
-            @hasanyrole('super_admin|admin')
+            @role('admin')
             <flux:sidebar.group :heading="__('Akademik')">
                 <flux:sidebar.item icon="calendar-days" :href="route('academic-years.index')"
                     :current="request()->routeIs('academic-years.*')" wire:navigate>
@@ -43,14 +57,16 @@
                     {{ __('Data Kelas') }}
                 </flux:sidebar.item>
 
-                <flux:sidebar.item icon="calendar-days" :href="route('events.index')"
-                    :current="request()->routeIs('events.*')" wire:navigate>
-                    {{ __('Agenda Kegiatan') }}
-                </flux:sidebar.item>
+
 
                 <flux:sidebar.item icon="clipboard-document-list" :href="route('activities.index')"
                     :current="request()->routeIs('activities.index')" wire:navigate>
                     {{ __('Kegiatan Harian') }}
+                </flux:sidebar.item>
+
+                <flux:sidebar.item icon="calendar" :href="route('events.index')"
+                    :current="request()->routeIs('events.index')" wire:navigate>
+                    {{ __('Agenda Kegiatan') }}
                 </flux:sidebar.item>
 
                 <flux:sidebar.item icon="calendar-days" :href="route('events.attendance.index')"
@@ -81,8 +97,14 @@
                 </flux:sidebar.item>
 
                 <flux:sidebar.item icon="academic-cap" :href="route('students.index')"
-                    :current="request()->routeIs('students.*')" wire:navigate>
+                    :current="request()->routeIs('students.index') || request()->routeIs('students.import')"
+                    wire:navigate>
                     {{ __('Santri') }}
+                </flux:sidebar.item>
+
+                <flux:sidebar.item icon="arrow-trending-up" :href="route('students.promotion')"
+                    :current="request()->routeIs('students.promotion')" wire:navigate>
+                    {{ __('Kenaikan Kelas') }}
                 </flux:sidebar.item>
 
                 <flux:sidebar.item icon="users" :href="route('guardians.index')"
@@ -104,12 +126,22 @@
                     :current="request()->routeIs('feedback.*')" wire:navigate>
                     {{ __('Feedback') }}
                 </flux:sidebar.item>
+
+                <flux:sidebar.item icon="identification" :href="route('student-cards.index')"
+                    :current="request()->routeIs('student-cards.*')" wire:navigate>
+                    {{ __('Kartu Santri') }}
+                </flux:sidebar.item>
             </flux:sidebar.group>
-            @endhasanyrole
+            @endrole
 
             @hasanyrole('super_admin|admin')
             <flux:sidebar.group :heading="__('Administrasi')">
                 @role('super_admin')
+                <flux:sidebar.item icon="printer" :href="route('student-card-requests.index')"
+                    :current="request()->routeIs('student-card-requests.*')" wire:navigate>
+                    {{ __('Cetak Kartu') }}
+                </flux:sidebar.item>
+
                 <flux:sidebar.item icon="building-library" :href="route('schools.index')"
                     :current="request()->routeIs('schools.*')" wire:navigate>
                     {{ __('Sekolah') }}
@@ -139,6 +171,7 @@
                 </flux:sidebar.item>
                 @endrole
 
+                @role('admin')
                 <flux:sidebar.item icon="banknotes" :href="route('wallet-transactions.index')"
                     :current="request()->routeIs('wallet-transactions.*')" wire:navigate>
                     {{ __('Transaksi Dompet') }}
@@ -158,13 +191,14 @@
                     :current="request()->routeIs('event-bills.*')" wire:navigate>
                     {{ __('Tagihan Kegiatan') }}
                 </flux:sidebar.item>
+                @endrole
             </flux:sidebar.group>
             @endhasanyrole
         </flux:sidebar.nav>
 
         <flux:spacer />
 
-        <flux:sidebar.nav>
+        {{-- <flux:sidebar.nav>
             <flux:sidebar.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit"
                 target="_blank">
                 {{ __('Repository') }}
@@ -174,7 +208,7 @@
                 target="_blank">
                 {{ __('Documentation') }}
             </flux:sidebar.item>
-        </flux:sidebar.nav>
+        </flux:sidebar.nav> --}}
 
         <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
     </flux:sidebar>

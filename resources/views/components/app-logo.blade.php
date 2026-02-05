@@ -4,8 +4,8 @@
 
 @if($sidebar)
     <flux:sidebar.brand name="SANDIGI   " {{ $attributes }}>
-        <x-slot name="logo" class="flex aspect-square size-8 items-center justify-center rounded-md bg-accent-content text-accent-foreground">
-            <x-app-logo-icon class="size-5 fill-current text-white dark:text-black" />
+        <x-slot name="logo" class="flex aspect-square size-12 items-center justify-center text-zinc-800 dark:text-white">
+            <x-app-logo-icon class="size-10 fill-current" />
         </x-slot>
     </flux:sidebar.brand>
 @else

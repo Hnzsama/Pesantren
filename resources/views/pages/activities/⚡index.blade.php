@@ -2,20 +2,24 @@
 
 use App\Models\Activity;
 use App\Models\Level;
+use Flux\Flux;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Livewire\Attributes\Layout;
-use Flux\Flux;
 
-new #[Layout('layouts.app')] class extends Component {
+new #[Layout('layouts.app')] class extends Component
+{
     use WithPagination;
 
     public $search = '';
+
     public $confirmingDeletion = false;
+
     public $deletingId = null;
 
     // Filters
     public $levelFilter = '';
+
     public $typeFilter = '';
 
     // Form
@@ -39,16 +43,16 @@ new #[Layout('layouts.app')] class extends Component {
 
         $activities = Activity::query()
             ->with(['level'])
-            ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
-            ->when($this->search, fn($q) => $q->where('name', 'like', '%' . $this->search . '%'))
-            ->when($this->levelFilter, fn($q) => $q->where('level_id', $this->levelFilter))
-            ->when($this->typeFilter, fn($q) => $q->where('type', $this->typeFilter))
+            ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
+            ->when($this->search, fn ($q) => $q->where('name', 'like', '%'.$this->search.'%'))
+            ->when($this->levelFilter, fn ($q) => $q->where('level_id', $this->levelFilter))
+            ->when($this->typeFilter, fn ($q) => $q->where('type', $this->typeFilter))
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
         return [
             'activities' => $activities,
-            'levels' => Level::when($schoolId, fn($q) => $q->where('school_id', $schoolId))->orderBy('name')->get(),
+            'levels' => Level::when($schoolId, fn ($q) => $q->where('school_id', $schoolId))->orderBy('name')->get(),
         ];
     }
 

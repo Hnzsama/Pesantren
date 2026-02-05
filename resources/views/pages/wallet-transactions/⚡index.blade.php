@@ -116,7 +116,7 @@ new class extends Component {
         <flux:select wire:model.live="studentFilter" variant="listbox" placeholder="Filter Santri" clearable>
             <flux:select.option value="">Semua Santri</flux:select.option>
             @foreach ($students as $student)
-                <flux:select.option value="{{ $student->id }}">{{ $student->name }}</flux:select.option>
+                <flux:select.option value="{{ $student->id }}">{{ $student->full_name }}</flux:select.option>
             @endforeach
         </flux:select>
 
@@ -149,6 +149,8 @@ new class extends Component {
             <flux:table.column>Kategori</flux:table.column>
             <flux:table.column>Tipe</flux:table.column>
             <flux:table.column>Jumlah</flux:table.column>
+            <flux:table.column>Platform Fee</flux:table.column>
+            <flux:table.column>PG Fee</flux:table.column>
             <flux:table.column>Status</flux:table.column>
             <flux:table.column>Tanggal</flux:table.column>
             <flux:table.column>Aksi</flux:table.column>
@@ -193,6 +195,18 @@ new class extends Component {
                             <flux:table.cell>
                                 <span class="{{ $txn->type === 'CREDIT' ? 'text-green-600' : 'text-red-600' }}">
                                     {{ $txn->type === 'CREDIT' ? '+' : '-' }} Rp {{ number_format($txn->amount, 0, ',', '.') }}
+                                </span>
+                            </flux:table.cell>
+
+                            <flux:table.cell>
+                                <span class="text-zinc-500 text-sm">
+                                    {{ $txn->admin_fee > 0 ? 'Rp ' . number_format($txn->admin_fee, 0, ',', '.') : '-' }}
+                                </span>
+                            </flux:table.cell>
+
+                            <flux:table.cell>
+                                <span class="text-zinc-500 text-sm">
+                                    {{ $txn->payment_fee > 0 ? 'Rp ' . number_format($txn->payment_fee, 0, ',', '.') : '-' }}
                                 </span>
                             </flux:table.cell>
 

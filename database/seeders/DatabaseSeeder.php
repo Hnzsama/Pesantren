@@ -23,9 +23,21 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class, // Handles Admins, Walis, and Students
             AcademicPromotionSeeder::class,
 
-            // Other seeders if needed...
-            // PaymentChannelSeeder::class,
-            // SettingSeeder::class,
+            // Master Data
+            PaymentChannelSeeder::class,
+            SettingSeeder::class,
+
+            // Content & Activities
+            ActivitySeeder::class,
+            EventSeeder::class,
+            NewsSeeder::class,
+            VideoLectureSeeder::class,
+            AchievementSeeder::class,
+
+            // Financial & Feedback
+            BillSeeder::class,
+            WalletTransactionSeeder::class,
+            FeedbackSeeder::class,
         ]);
     }
 }

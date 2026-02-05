@@ -17,7 +17,8 @@ return new class extends Migration
             $table->foreignUlid('issued_by')->constrained('users')->cascadeOnDelete();
             $table->string('card_number')->unique();
             $table->date('issued_at');
-            $table->date('expires_at');
+            $table->date('expires_at')->nullable();
+            $table->enum('status', ['generated', 'request_print', 'printed'])->default('generated');
             $table->timestamps();
         });
     }

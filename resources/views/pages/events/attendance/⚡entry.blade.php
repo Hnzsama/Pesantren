@@ -7,8 +7,7 @@ use Flux\Flux;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-new #[Layout('layouts.app')] class extends Component
-{
+new #[Layout('layouts.app')] class extends Component {
     public $event;
 
     public $students = [];
@@ -26,7 +25,7 @@ new #[Layout('layouts.app')] class extends Component
         $levelIds = $this->event->levels->pluck('id');
         $this->students = Student::whereIn('level_id', $levelIds)
             ->where('school_id', $this->event->school_id)
-            ->orderBy('name')
+            ->orderBy('full_name')
             ->get();
 
         // Load existing attendance

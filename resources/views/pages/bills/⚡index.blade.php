@@ -289,6 +289,8 @@ new class extends Component {
             <flux:table.column>Kategori</flux:table.column>
             <flux:table.column>Judul</flux:table.column>
             <flux:table.column>Jumlah</flux:table.column>
+            <flux:table.column>Platform Fee</flux:table.column>
+            <flux:table.column>PG Fee</flux:table.column>
             <flux:table.column>Jatuh Tempo</flux:table.column>
             <flux:table.column>Status</flux:table.column>
             <flux:table.column>Aksi</flux:table.column>
@@ -325,6 +327,18 @@ new class extends Component {
                             <flux:table.cell>
                                 <span class="text-zinc-700 dark:text-zinc-300">
                                     Rp {{ number_format($bill->amount, 0, ',', '.') }}
+                                </span>
+                            </flux:table.cell>
+
+                            <flux:table.cell>
+                                <span class="text-zinc-500 text-sm">
+                                    {{ $bill->admin_fee > 0 ? 'Rp ' . number_format($bill->admin_fee, 0, ',', '.') : '-' }}
+                                </span>
+                            </flux:table.cell>
+
+                            <flux:table.cell>
+                                <span class="text-zinc-500 text-sm">
+                                    {{ $bill->payment_fee > 0 ? 'Rp ' . number_format($bill->payment_fee, 0, ',', '.') : '-' }}
                                 </span>
                             </flux:table.cell>
 
@@ -609,11 +623,44 @@ new class extends Component {
                     <!-- Amount Card -->
                     <div
                         class="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg p-6">
-                        <flux:label class="mb-3">Total Tagihan</flux:label>
+                        <flux:label class="mb-3">Total Tagihan (Base Amount)</flux:label>
                         <div class="text-3xl font-bold text-red-600 dark:text-red-400">
                             Rp {{ number_format($selectedBill->amount, 0, ',', '.') }}
                         </div>
                     </div>
+
+                    <!-- Fees Breakdown -->
+                    @if($selectedBill->payment_fee > 0 || $selectedBill->admin_fee > 0)
+                        <div class="bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-5 space-y-4">
+                            <flux:label>Rincian Biaya Tambahan</flux:label>
+
+                            <div class="space-y-3 text-sm">
+                                @if($selectedBill->admin_fee > 0)
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-zinc-600 dark:text-zinc-400">Biaya Platform (Admin)</span>
+                                        <span class="font-medium">Rp
+                                            {{ number_format($selectedBill->admin_fee, 0, ',', '.') }}</span>
+                                    </div>
+                                @endif
+
+                                @if($selectedBill->payment_fee > 0)
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-zinc-600 dark:text-zinc-400">Biaya Payment Gateway</span>
+                                        <span class="font-medium">Rp
+                                            {{ number_format($selectedBill->payment_fee, 0, ',', '.') }}</span>
+                                    </div>
+                                @endif
+
+                                <flux:separator variant="subtle" />
+
+                                <div class="flex justify-between items-center text-base pt-1">
+                                    <span class="font-semibold">Total Invoice</span>
+                                    <span class="font-bold text-lg">Rp
+                                        {{ number_format($selectedBill->amount + $selectedBill->payment_fee + $selectedBill->admin_fee, 0, ',', '.') }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
 
                     <!-- Bill Details -->
                     <div class="space-y-4">
