@@ -27,4 +27,21 @@ class Department extends Model
     {
         return $this->hasMany(Level::class)->orderBy('grade_level');
     }
+
+    public function getBadgeColorAttribute(): string
+    {
+        $code = strtoupper($this->code);
+
+        return match (true) {
+            str_starts_with($code, 'PAUD') => 'orange',
+            str_starts_with($code, 'TK') || str_starts_with($code, 'RA') => 'amber',
+            str_starts_with($code, 'MDT') => 'lime',
+            str_starts_with($code, 'MI') || str_starts_with($code, 'SD') => 'emerald',
+            str_starts_with($code, 'MTS') || str_starts_with($code, 'SMP') => 'teal',
+            str_starts_with($code, 'MA') || str_starts_with($code, 'SMA') || str_starts_with($code, 'SMK') => 'cyan',
+            str_starts_with($code, 'KUL') => 'sky',
+            str_starts_with($code, 'MA\'HAD') => 'indigo',
+            default => 'zinc',
+        };
+    }
 }

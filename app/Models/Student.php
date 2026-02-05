@@ -138,4 +138,37 @@ class Student extends Model
         return $this->hasOne(StudentCard::class);
     }
 
+    /**
+     * Scope a query to only include students with incomplete data.
+     */
+    public function scopeIncomplete(\Illuminate\Database\Eloquent\Builder $query): void
+    {
+        $query->whereNull('parent_user_id')
+              ->orWhereNull('level_id')
+              ->orWhereNull('birth_date');
+    }
+
+    /**
+     * Get the list of missing fields.
+     *
+     * @return array<string>
+     */
+    public function getMissingFieldsAttribute(): array
+    {
+        $missing = [];
+
+        if (is_null($this->parent_user_id)) {
+            $missing[] = 'Wali Santri';
+        }
+
+        if (is_null($this->level_id)) {
+            $missing[] = 'Kelas';
+        }
+
+        if (is_null($this->birth_date)) {
+            $missing[] = 'Tanggal Lahir';
+        }
+
+        return $missing;
+    }
 }

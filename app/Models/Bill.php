@@ -14,13 +14,12 @@ class Bill extends Model
 
     protected $fillable = [
         'school_id',
+        'invoice_code',
         'student_id',
         'event_id',
         'bill_category_id',
-
         'title',
         'bill_code',
-        'type', // Deprecated? Check plan
         'amount',
         'payment_fee',
         'admin_fee',

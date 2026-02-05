@@ -11,7 +11,14 @@ class StudentCard extends Model
 {
     use HasFactory, HasUlids;
 
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'student_id',
+        'issued_by',
+        'card_number',
+        'issued_at',
+        'expires_at',
+        'status',
+    ];
 
     protected $casts = [
         'issued_at' => 'date',
@@ -26,5 +33,20 @@ class StudentCard extends Model
     public function issuer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'issued_by');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'printed')
+            ->where(function ($q) {
+                $q->whereNull('expires_at')
+                    ->orWhere('expires_at', '>=', now()->toDateString());
+            });
+    }
+
+    public function getIsActiveAttribute(): bool
+    {
+        return $this->status === 'printed' && 
+            ($this->expires_at === null || $this->expires_at >= now()->toDateString());
     }
 }

@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('event_level', function (Blueprint $table) {
-            $table->id();
-            $table->foreignUlid('event_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('level_id')->constrained()->cascadeOnDelete();
-            $table->timestamps();
+        // Schema::create('event_level', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->foreignUlid('event_id')->constrained()->cascadeOnDelete();
+        //     $table->foreignId('level_id')->constrained()->cascadeOnDelete();
+        //     $table->timestamps();
 
-            $table->unique(['event_id', 'level_id']);
-        });
+        //     $table->unique(['event_id', 'level_id']);
+        // });
     }
 
     /**

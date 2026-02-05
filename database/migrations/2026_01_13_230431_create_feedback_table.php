@@ -13,10 +13,11 @@ return new class extends Migration
     {
         Schema::create('feedback', function (Blueprint $table) {
             $table->id();
+            $table->foreignUlid('school_id')->nullable()->constrained()->cascadeOnDelete(); // Optional (null for superadmin)
             $table->foreignUlid('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('sender_name');
-            $table->string('email')->nullable();
-            $table->string('phone')->nullable();
+            $table->string('email'); // Wajib
+            $table->string('phone'); // Wajib
             $table->enum('category', ['fasilitas', 'akademik', 'layanan']);
             $table->text('message');
             $table->text('admin_reply')->nullable();

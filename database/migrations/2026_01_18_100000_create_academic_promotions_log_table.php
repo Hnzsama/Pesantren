@@ -24,8 +24,8 @@ return new class extends Migration
             $table->timestamp('executed_at');
 
             // Level change tracking (optional but helpful)
-            $table->foreignId('from_level_id')->nullable()->constrained('levels')->nullOnDelete();
-            $table->foreignId('to_level_id')->nullable()->constrained('levels')->nullOnDelete();
+            $table->foreignUlid('from_level_id')->nullable()->constrained('levels')->nullOnDelete();
+            $table->foreignUlid('to_level_id')->nullable()->constrained('levels')->nullOnDelete();
 
             $table->timestamps();
         });

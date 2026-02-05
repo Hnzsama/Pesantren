@@ -51,8 +51,7 @@ class StudentReport extends Model
         }
 
         return collect($paths)->map(function ($path) {
-            $filename = basename($path);
-            return route('student-reports.file', ['filename' => $filename]);
+            return Storage::url($path);
         })->toArray();
     }
 

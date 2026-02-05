@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('full_name');
             $table->foreignUlid('parent_user_id')->nullable()->constrained('users')->cascadeOnDelete(); // Consolidation: made nullable
             $table->boolean('needs_parent_verification')->default(false); // Consolidation: added column
-            $table->foreignId('level_id')->nullable()->constrained('levels')->nullOnDelete();
+            $table->foreignUlid('level_id')->nullable()->constrained('levels')->nullOnDelete();
             $table->decimal('wallet_balance', 15, 2)->default(0);
             $table->string('wallet_pin')->nullable();
             $table->decimal('daily_cash_limit', 10, 2)->default(50000); // Only for CASH_WITHDRAWAL

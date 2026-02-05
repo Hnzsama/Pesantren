@@ -12,6 +12,26 @@ class ActivitySeeder extends Seeder
      */
     public function run(): void
     {
-        //
+        $schools = \App\Models\School::all();
+
+        foreach ($schools as $school) {
+            $levels = $school->levels;
+
+            foreach ($levels as $level) {
+                // Create Daily Activities
+                \App\Models\Activity::factory()->count(3)->create([
+                    'school_id' => $school->id,
+                    'level_id' => $level->id,
+                    'type' => 'daily',
+                ]);
+
+                // Create Rutinan Activities
+                \App\Models\Activity::factory()->count(2)->create([
+                    'school_id' => $school->id,
+                    'level_id' => $level->id,
+                    'type' => 'rutinan',
+                ]);
+            }
+        }
     }
 }

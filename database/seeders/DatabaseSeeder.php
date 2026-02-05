@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -20,12 +19,25 @@ class DatabaseSeeder extends Seeder
             AcademicYearSeeder::class,
             SemesterSeeder::class,
             LevelSeeder::class,
+            BillCategorySeeder::class,
             UserSeeder::class, // Handles Admins, Walis, and Students
             AcademicPromotionSeeder::class,
-            
-            // Other seeders if needed...
-            // PaymentChannelSeeder::class,
-            // SettingSeeder::class,
+
+            // Master Data
+            PaymentChannelSeeder::class,
+            SettingSeeder::class,
+
+            // Content & Activities
+            ActivitySeeder::class,
+            EventSeeder::class,
+            NewsSeeder::class,
+            VideoLectureSeeder::class,
+            AchievementSeeder::class,
+
+            // Financial & Feedback
+            BillSeeder::class,
+            WalletTransactionSeeder::class,
+            FeedbackSeeder::class,
         ]);
     }
 }

@@ -17,7 +17,11 @@ class ActivityFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => $this->faker->randomElement(['Sholat Dhuha', 'Ngaji Pagi', 'Setoran Hafalan', 'Kerja Bakti', 'Olahraga Pagi']),
+            'type' => $this->faker->randomElement(['daily', 'rutinan']),
+            'description' => $this->faker->sentence(),
+            'school_id' => \App\Models\School::inRandomOrder()->first()?->id,
+            'level_id' => \App\Models\Level::inRandomOrder()->first()?->id,
         ];
     }
 }

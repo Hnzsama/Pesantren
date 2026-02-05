@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 class VideoLecture extends Model
 {
-    use HasFactory, \App\Traits\HasSchoolScope;
+    use HasFactory, \App\Traits\HasSchoolScope, \Illuminate\Database\Eloquent\Concerns\HasUlids;
 
     protected $guarded = [];
 
