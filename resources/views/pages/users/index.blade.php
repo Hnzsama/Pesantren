@@ -5,12 +5,14 @@ use App\Models\User;
 use Flux\Flux;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\Lazy;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Spatie\Permission\Models\Role;
 
-new class extends Component {
+new #[Lazy] class extends Component
+{
     use WithPagination;
 
     #[Url]
@@ -45,13 +47,13 @@ new class extends Component {
             ->whereHas('roles', function ($q) {
                 $q->whereIn('name', ['admin', 'admin_koperasi']);
             })
-            ->when($this->search, fn($q) => $q->where('name', 'like', '%' . $this->search . '%'))
-            ->when($this->roleFilter, fn($q) => $q->whereHas('roles', fn($r) => $r->where('name', $this->roleFilter)));
+            ->when($this->search, fn ($q) => $q->where('name', 'like', '%'.$this->search.'%'))
+            ->when($this->roleFilter, fn ($q) => $q->whereHas('roles', fn ($r) => $r->where('name', $this->roleFilter)));
 
         if (auth()->user()->hasRole('admin')) {
             $query->where('school_id', auth()->user()->school_id);
         } else {
-            $query->when($this->schoolFilter, fn($q) => $q->where('school_id', $this->schoolFilter));
+            $query->when($this->schoolFilter, fn ($q) => $q->where('school_id', $this->schoolFilter));
         }
 
         return [
@@ -138,6 +140,41 @@ new class extends Component {
         $this->reset(['name', 'email', 'phone_number', 'password', 'role', 'school_id', 'userId']);
         $this->resetValidation();
         $this->modal('user-modal')->show();
+    }
+
+    public function placeholder()
+    {
+        return <<<'HTML'
+        <div class="space-y-6 w-full">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div class="space-y-2">
+                    <div class="h-10 w-48 bg-zinc-100 dark:bg-zinc-800 rounded animate-pulse"></div>
+                    <div class="h-4 w-64 bg-zinc-50 dark:bg-zinc-900 rounded animate-pulse"></div>
+                </div>
+                <div class="h-10 w-32 bg-zinc-200 dark:bg-zinc-700 rounded-lg animate-pulse"></div>
+            </div>
+            
+            <div class="flex flex-col md:flex-row gap-4 mb-6">
+                <div class="h-10 w-full md:w-64 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 animate-pulse"></div>
+                <div class="h-10 w-full md:w-48 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 animate-pulse"></div>
+            </div>
+
+            <div class="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                <div class="p-6 bg-white dark:bg-zinc-900 space-y-4">
+                    @foreach(range(1, 10) as $i)
+                        <div class="flex items-center gap-4">
+                            <div class="flex-1 space-y-2">
+                                <div class="h-4 bg-zinc-100 dark:bg-zinc-800 rounded w-1/4 animate-pulse"></div>
+                                <div class="h-3 bg-zinc-50 dark:bg-zinc-900 rounded w-1/6 animate-pulse"></div>
+                            </div>
+                            <div class="w-16 h-6 bg-zinc-50 dark:bg-zinc-900 rounded animate-pulse"></div>
+                        </div>
+                        <div class="h-px bg-zinc-100 dark:bg-zinc-800 w-full"></div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        HTML;
     }
 }; ?>
 

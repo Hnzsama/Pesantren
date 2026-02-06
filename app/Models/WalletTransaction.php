@@ -47,6 +47,11 @@ class WalletTransaction extends Model
         return $this->belongsTo(User::class, 'pic_user_id');
     }
 
+    public function operator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'operator_id');
+    }
+
     public function scopeGateway($query)
     {
         return $query->where('payment_method', self::PAYMENT_METHOD_GATEWAY);

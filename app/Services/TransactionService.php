@@ -214,4 +214,52 @@ class TransactionService
 
         return $defaultPin; // Return plaintext for admin to communicate
     }
+
+    /**
+     * Process POS purchase transaction
+     * 
+     * @throws \Exception
+     */
+    public function processPurchase(Student $student, float $amount, string $pin, User $operator): WalletTransaction
+    {
+        return DB::transaction(function () use ($student, $amount, $pin, $operator) {
+            // 1. Basic Validations
+            if (!$student->allow_transaction) {
+                throw new \Exception('Transaksi diblokir. Hubungi admin untuk aktivasi akun.');
+            }
+
+            // 2. Verify PIN
+            if (!$student->wallet_pin) {
+                throw new \Exception('PIN belum diatur. Silakan hubungi admin untuk setup PIN.');
+            }
+
+            if (!Hash::check($pin, $student->wallet_pin)) {
+                throw new \Exception('PIN salah. Periksa kembali PIN Anda.');
+            }
+
+            // 3. Balance Check
+            if ($student->wallet_balance < $amount) {
+                throw new \Exception('Saldo tidak cukup. Saldo Anda: Rp ' . number_format($student->wallet_balance, 0, ',', '.'));
+            }
+
+            // 4. Processing
+            $student->decrement('wallet_balance', $amount);
+
+            return WalletTransaction::create([
+                'school_id' => $student->school_id,
+                'invoice_code' => 'PURC-' . strtoupper(uniqid()),
+                'student_id' => $student->id,
+                'pic_user_id' => $operator->id,
+                'operator_id' => $operator->id,
+                'type' => 'DEBIT',
+                'category' => 'PURCHASE',
+                'amount' => $amount,
+                'payment_method' => 'cash', // 'cash' represents domestic/local payment
+                'status' => 'PAID',
+                'description' => 'Pembelian Koperasi - Kasir: ' . $operator->name,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        });
+    }
 }

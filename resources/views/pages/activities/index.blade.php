@@ -4,12 +4,48 @@ use App\Models\Activity;
 use App\Models\Level;
 use Flux\Flux;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Lazy;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-new #[Layout('layouts.app')] class extends Component
-{
+new #[Lazy] #[Layout('layouts.app')] class extends Component {
     use WithPagination;
+
+    public function placeholder()
+    {
+        return <<<'HTML'
+        <div class="space-y-6 w-full">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div class="space-y-2">
+                    <div class="h-10 w-48 bg-zinc-100 dark:bg-zinc-800 rounded animate-pulse"></div>
+                    <div class="h-4 w-64 bg-zinc-50 dark:bg-zinc-900 rounded animate-pulse"></div>
+                </div>
+                <div class="h-10 w-32 bg-zinc-200 dark:bg-zinc-700 rounded-lg animate-pulse"></div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                @foreach(range(1, 4) as $i)
+                    <div class="h-10 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 animate-pulse"></div>
+                @endforeach
+            </div>
+
+            <div class="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                <div class="p-6 bg-white dark:bg-zinc-900 space-y-4">
+                    @foreach(range(1, 10) as $i)
+                        <div class="flex items-center gap-4">
+                            <div class="flex-1 space-y-2">
+                                <div class="h-4 bg-zinc-100 dark:bg-zinc-800 rounded w-1/4 animate-pulse"></div>
+                                <div class="h-3 bg-zinc-50 dark:bg-zinc-900 rounded w-1/6 animate-pulse"></div>
+                            </div>
+                            <div class="w-16 h-6 bg-zinc-50 dark:bg-zinc-900 rounded animate-pulse"></div>
+                        </div>
+                        <div class="h-px bg-zinc-100 dark:bg-zinc-800 w-full"></div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        HTML;
+    }
 
     public $search = '';
 
@@ -43,16 +79,16 @@ new #[Layout('layouts.app')] class extends Component
 
         $activities = Activity::query()
             ->with(['level'])
-            ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
-            ->when($this->search, fn ($q) => $q->where('name', 'like', '%'.$this->search.'%'))
-            ->when($this->levelFilter, fn ($q) => $q->where('level_id', $this->levelFilter))
-            ->when($this->typeFilter, fn ($q) => $q->where('type', $this->typeFilter))
+            ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
+            ->when($this->search, fn($q) => $q->where('name', 'like', '%' . $this->search . '%'))
+            ->when($this->levelFilter, fn($q) => $q->where('level_id', $this->levelFilter))
+            ->when($this->typeFilter, fn($q) => $q->where('type', $this->typeFilter))
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
         return [
             'activities' => $activities,
-            'levels' => Level::when($schoolId, fn ($q) => $q->where('school_id', $schoolId))->orderBy('name')->get(),
+            'levels' => Level::when($schoolId, fn($q) => $q->where('school_id', $schoolId))->orderBy('name')->get(),
         ];
     }
 

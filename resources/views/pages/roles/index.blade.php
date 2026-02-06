@@ -1,11 +1,40 @@
 <?php
 
-use Livewire\Component;
-use Spatie\Permission\Models\Role;
 use Flux\Flux;
 use Livewire\Attributes\Url;
+use Livewire\Attributes\Lazy;
+use Livewire\Component;
+use Livewire\WithPagination;
+use Spatie\Permission\Models\Role;
 
-new class extends Component {
+new #[Lazy] class extends Component {
+    use WithPagination;
+
+    public function placeholder()
+    {
+        return <<<'HTML'
+        <div class="space-y-6 w-full">
+            <div class="relative mb-6 w-full">
+                <div class="h-10 w-48 bg-zinc-100 dark:bg-zinc-800 rounded animate-pulse"></div>
+                <div class="h-4 w-96 mt-2 bg-zinc-50 dark:bg-zinc-900 rounded animate-pulse"></div>
+            </div>
+            
+            <div class="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                <div class="p-6 bg-white dark:bg-zinc-900 space-y-4">
+                    @foreach(range(1, 4) as $i)
+                        <div class="flex items-center gap-4">
+                            <div class="flex-1 space-y-2">
+                                <div class="h-4 bg-zinc-100 dark:bg-zinc-800 rounded w-1/4 animate-pulse"></div>
+                                <div class="h-3 bg-zinc-50 dark:bg-zinc-900 rounded w-1/6 animate-pulse"></div>
+                            </div>
+                        </div>
+                        <div class="h-px bg-zinc-100 dark:bg-zinc-800 w-full"></div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        HTML;
+    }
     #[Url]
     public $sortBy = 'name';
 

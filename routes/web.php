@@ -3,17 +3,35 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 })->name('home');
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+Route::get('dashboard', function () {
+    $user = auth()->user();
+
+    if ($user->hasRole('super_admin')) {
+        return redirect()->route('super-admin.dashboard');
+    }
+
+    if ($user->hasRole('admin')) {
+        return redirect()->route('admin.dashboard');
+    }
+
+    if ($user->hasRole('admin_koperasi')) {
+        return redirect()->route('koperasi.dashboard');
+    }
+
+    return \Livewire\Volt\Volt::render('pages::dashboard.index');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
-    // Dashboards
-    Route::livewire('dashboard/super-admin', 'pages::dashboard.super-admin')->name('dashboard.super-admin');
-    Route::livewire('dashboard/admin', 'pages::dashboard.admin')->name('dashboard.admin');
+    // Dashboards - Statistics
+    Route::livewire('super-admin/dashboard', 'pages::dashboard.super-admin-stat')->name('super-admin.dashboard');
+    Route::livewire('admin/dashboard', 'pages::dashboard.admin-stat')->name('admin.dashboard');
+
+    // Dashboards - Financials
+    Route::livewire('super-admin/financial', 'pages::dashboard.super-admin')->name('super-admin.financial');
+    Route::livewire('admin/financial', 'pages::dashboard.admin')->name('admin.financial');
 
     Route::livewire('users', 'pages::users.index')->name('users');
     Route::livewire('schools', 'pages::schools.index')->name('schools.index');
@@ -33,30 +51,33 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('agenda-kegiatan', 'pages::events.index')->name('events.index');
     Route::livewire('tagihan-kegiatan', 'pages::event-bills.index')->name('event-bills.index');
     Route::livewire('kegiatan-harian', 'pages::activities.index')->name('activities.index');
-    
+
     // Attendance (Event)
-    Route::livewire('agenda-kegiatan/presensi', 'pages::events.attendance.⚡index')->name('events.attendance.index');
-    Route::livewire('agenda-kegiatan/{eventId}/presensi-input', 'pages::events.attendance.⚡entry')->name('events.attendance.entry');
-    Route::livewire('agenda-kegiatan/{eventId}/scan', 'pages::events.attendance.⚡scan')->name('events.attendance.scan');
-    Route::livewire('agenda-kegiatan/detail', 'pages::events.attendance.⚡detail')->name('events.attendance.detail');
+    Route::livewire('agenda-kegiatan/presensi', 'pages::events.attendance.index')->name('events.attendance.index');
+    Route::livewire('agenda-kegiatan/{eventId}/presensi-input', 'pages::events.attendance.entry')->name('events.attendance.entry');
+    Route::livewire('agenda-kegiatan/{eventId}/scan', 'pages::events.attendance.scan')->name('events.attendance.scan');
+    Route::livewire('agenda-kegiatan/detail', 'pages::events.attendance.detail')->name('events.attendance.detail');
 
     // Attendance (Activity)
-    Route::livewire('presensi-kegiatan', 'pages::activities.attendance.⚡index')->name('activities.attendance.index');
-    Route::livewire('presensi-kegiatan/catat', 'pages::activities.attendance.⚡entry')->name('activities.attendance.entry');
-    Route::livewire('presensi-kegiatan/scan', 'pages::activities.attendance.⚡scan')->name('activities.attendance.scan');
-    Route::livewire('presensi-kegiatan/detail', 'pages::activities.attendance.⚡detail')->name('activities.attendance.detail');
+    Route::livewire('presensi-kegiatan', 'pages::activities.attendance.index')->name('activities.attendance.index');
+    Route::livewire('presensi-kegiatan/catat', 'pages::activities.attendance.entry')->name('activities.attendance.entry');
+    Route::livewire('presensi-kegiatan/scan', 'pages::activities.attendance.scan')->name('activities.attendance.scan');
+    Route::livewire('presensi-kegiatan/detail', 'pages::activities.attendance.detail')->name('activities.attendance.detail');
 
     // Achievements
-    Route::livewire('jadwal-sowan', 'pages::sowan-schedules.⚡index')->name('sowan-schedules.index');
-    Route::livewire('perizinan', 'pages::student-permissions.⚡index')->name('student-permissions.index');
-    Route::livewire('kajian', 'pages::video-lectures.⚡index')->name('lectures.index');
-    Route::livewire('prestasi/create', 'pages::achievements.⚡create')->name('achievements.create');
-    Route::livewire('prestasi', 'pages::achievements.⚡index')->name('achievements.index');
+    Route::livewire('jadwal-sowan', 'pages::sowan-schedules.index')->name('sowan-schedules.index');
+    Route::livewire('perizinan', 'pages::student-permissions.index')->name('student-permissions.index');
+    Route::livewire('kajian', 'pages::video-lectures.index')->name('lectures.index');
+    Route::livewire('prestasi/create', 'pages::achievements.create')->name('achievements.create');
+    Route::livewire('prestasi', 'pages::achievements.index')->name('achievements.index');
 
     // Student Reports
     Route::livewire('laporan-santri', 'pages::student-reports.index')->name('student-reports.index');
-    Route::livewire('laporan-santri/create', 'pages::student-reports.⚡create')->name('student-reports.create');
-    Route::livewire('laporan-santri/{id}/edit', 'pages::student-reports.⚡create')->name('student-reports.edit');
+    Route::livewire('laporan-santri/create', 'pages::student-reports.create')->name('student-reports.create');
+    Route::livewire('laporan-santri/{id}/edit', 'pages::student-reports.create')->name('student-reports.edit');
+
+    // News
+    Route::livewire('berita', 'pages::news.index')->name('news.index');
 
     // Feedback
     Route::livewire('feedback', 'pages::feedback.index')->name('feedback.index');
@@ -64,6 +85,18 @@ Route::middleware(['auth'])->group(function () {
     // Student Cards
     Route::livewire('kartu-santri', 'pages::student-cards.index')->name('student-cards.index');
     Route::livewire('permintaan-cetak-kartu', 'pages::student-card-requests.index')->name('student-card-requests.index');
+
+    // Withdrawals
+    Route::livewire('dashboard/admin/penarikan-dana', 'pages::dashboard.admin.withdrawals')->name('dashboard.admin.withdrawals');
+    Route::livewire('dashboard/admin/penarikan-uang-saku', 'pages::dashboard.admin.student-cash-withdrawal')->name('dashboard.admin.student-cash-withdrawal');
+    Route::livewire('dashboard/super-admin/kelola-penarikan', 'pages::dashboard.super-admin.withdrawals')->name('dashboard.super-admin.withdrawals');
+
+    // Cooperative
+    Route::prefix('koperasi')->group(function () {
+        Route::livewire('dashboard', 'pages::dashboard.cooperative-stat')->name('koperasi.dashboard');
+        Route::livewire('pos', 'pages::dashboard.cooperative.pos')->name('koperasi.pos');
+        Route::livewire('riwayat', 'pages::dashboard.cooperative.history')->name('koperasi.history');
+    });
 });
 
 require __DIR__.'/settings.php';

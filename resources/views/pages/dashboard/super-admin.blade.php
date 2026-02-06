@@ -214,58 +214,98 @@ new class extends Component {
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <!-- Total Managed Balance -->
-        <flux:card class="overflow-hidden min-w-[12rem]">
-            <flux:text>Total Managed Balance</flux:text>
-            <flux:heading size="xl" class="mt-2 tabular-nums">Rp
-                {{ number_format($this->totalManagedBalance, 0, ',', '.') }}
-            </flux:heading>
-            <flux:chart class="-mx-8 -mb-8 h-[3rem]" :value="$this->sparklines['bills']">
-                <flux:chart.svg gutter="0">
-                    <flux:chart.line class="text-sky-200 dark:text-sky-400" />
-                    <flux:chart.area class="text-sky-100 dark:text-sky-400/30" />
-                </flux:chart.svg>
-            </flux:chart>
+        <flux:card
+            class="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-gradient-to-br from-blue-500/10 to-indigo-500/5 dark:from-sky-500/15 dark:to-indigo-500/10 ring-1 ring-blue-100 dark:ring-blue-900/30">
+            <div class="flex items-start justify-between">
+                <div class="space-y-3">
+                    <flux:text class="font-bold text-blue-600 dark:text-sky-400 uppercase tracking-widest text-[10px]">
+                        Managed Balance</flux:text>
+                    <div class="flex items-baseline gap-2">
+                        <flux:heading size="xl" class="text-2xl font-bold tabular-nums">Rp
+                            {{ number_format($this->totalManagedBalance, 0, ',', '.') }}
+                        </flux:heading>
+                    </div>
+                </div>
+                <div
+                    class="p-3 bg-blue-500/10 dark:bg-sky-500/20 rounded-2xl text-blue-600 dark:text-sky-400 group-hover:rotate-12 transition-transform duration-300">
+                    <flux:icon name="banknotes" variant="outline" class="w-6 h-6" />
+                </div>
+            </div>
+            <div class="absolute -bottom-2 -right-2 opacity-5 scale-150 rotate-12 text-blue-600 dark:text-sky-400">
+                <flux:icon name="banknotes" class="w-20 h-20" />
+            </div>
         </flux:card>
 
         <!-- Bill Paid -->
-        <flux:card class="overflow-hidden min-w-[12rem]">
-            <flux:text>Total Bill Paid</flux:text>
-            <flux:heading size="xl" class="mt-2 tabular-nums">Rp {{ number_format($this->totalBillPaid, 0, ',', '.') }}
-            </flux:heading>
-            <flux:chart class="-mx-8 -mb-8 h-[3rem]" :value="$this->sparklines['bills']">
-                <flux:chart.svg gutter="0">
-                    <flux:chart.line class="text-emerald-200 dark:text-emerald-400" />
-                    <flux:chart.area class="text-emerald-100 dark:text-emerald-400/30" />
-                </flux:chart.svg>
-            </flux:chart>
+        <flux:card
+            class="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-gradient-to-br from-emerald-500/10 to-teal-500/5 dark:from-emerald-500/15 dark:to-teal-500/10 ring-1 ring-emerald-100 dark:ring-emerald-900/30">
+            <div class="flex items-start justify-between">
+                <div class="space-y-3">
+                    <flux:text
+                        class="font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest text-[10px]">
+                        Total Bill Paid</flux:text>
+                    <div class="flex items-baseline gap-2">
+                        <flux:heading size="xl" class="text-2xl font-bold tabular-nums">Rp
+                            {{ number_format($this->totalBillPaid, 0, ',', '.') }}
+                        </flux:heading>
+                    </div>
+                </div>
+                <div
+                    class="p-3 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-2xl text-emerald-600 dark:text-emerald-400 group-hover:rotate-12 transition-transform duration-300">
+                    <flux:icon name="credit-card" variant="outline" class="w-6 h-6" />
+                </div>
+            </div>
+            <div
+                class="absolute -bottom-2 -right-2 opacity-5 scale-150 rotate-12 text-emerald-600 dark:text-emerald-400">
+                <flux:icon name="credit-card" class="w-20 h-20" />
+            </div>
         </flux:card>
 
         <!-- Top Up -->
-        <flux:card class="overflow-hidden min-w-[12rem]">
-            <flux:text>Total Top Up Santri</flux:text>
-            <flux:heading size="xl" class="mt-2 tabular-nums">Rp {{ number_format($this->totalTopUp, 0, ',', '.') }}
-            </flux:heading>
-            <flux:chart class="-mx-8 -mb-8 h-[3rem]" :value="$this->sparklines['topups']">
-                <flux:chart.svg gutter="0">
-                    <flux:chart.line class="text-violet-200 dark:text-violet-400" />
-                    <flux:chart.area class="text-violet-100 dark:text-violet-400/30" />
-                </flux:chart.svg>
-            </flux:chart>
+        <flux:card
+            class="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-gradient-to-br from-violet-500/10 to-purple-500/5 dark:from-violet-500/15 dark:to-purple-500/10 ring-1 ring-violet-100 dark:ring-violet-900/30">
+            <div class="flex items-start justify-between">
+                <div class="space-y-3">
+                    <flux:text
+                        class="font-bold text-violet-600 dark:text-violet-400 uppercase tracking-widest text-[10px]">
+                        Total Top Up</flux:text>
+                    <div class="flex items-baseline gap-2">
+                        <flux:heading size="xl" class="text-2xl font-bold tabular-nums">Rp
+                            {{ number_format($this->totalTopUp, 0, ',', '.') }}
+                        </flux:heading>
+                    </div>
+                </div>
+                <div
+                    class="p-3 bg-violet-500/10 dark:bg-violet-500/20 rounded-2xl text-violet-600 dark:text-violet-400 group-hover:rotate-12 transition-transform duration-300">
+                    <flux:icon name="wallet" variant="outline" class="w-6 h-6" />
+                </div>
+            </div>
+            <div class="absolute -bottom-2 -right-2 opacity-5 scale-150 rotate-12 text-violet-600 dark:text-violet-400">
+                <flux:icon name="wallet" class="w-20 h-20" />
+            </div>
         </flux:card>
 
         <!-- Fees -->
-        <flux:card class="overflow-hidden min-w-[12rem]">
-            <flux:text>Total Platform Fee</flux:text>
-            <flux:heading size="xl" class="mt-2 tabular-nums">Rp
-                {{ number_format($this->totalPlatformFee, 0, ',', '.') }}
-            </flux:heading>
-            <!-- Using bills sparkline as proxy for now or flat line -->
-            <flux:chart class="-mx-8 -mb-8 h-[3rem]" :value="$this->sparklines['bills']">
-                <flux:chart.svg gutter="0">
-                    <flux:chart.line class="text-pink-200 dark:text-pink-400" />
-                    <flux:chart.area class="text-pink-100 dark:text-pink-400/30" />
-                </flux:chart.svg>
-            </flux:chart>
+        <flux:card
+            class="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-gradient-to-br from-pink-500/10 to-rose-500/5 dark:from-pink-500/15 dark:to-rose-500/10 ring-1 ring-pink-100 dark:ring-pink-900/30">
+            <div class="flex items-start justify-between">
+                <div class="space-y-3">
+                    <flux:text class="font-bold text-pink-600 dark:text-pink-400 uppercase tracking-widest text-[10px]">
+                        Platform Fee</flux:text>
+                    <div class="flex items-baseline gap-2">
+                        <flux:heading size="xl" class="text-2xl font-bold tabular-nums">Rp
+                            {{ number_format($this->totalPlatformFee, 0, ',', '.') }}
+                        </flux:heading>
+                    </div>
+                </div>
+                <div
+                    class="p-3 bg-pink-500/10 dark:bg-pink-500/20 rounded-2xl text-pink-600 dark:text-pink-400 group-hover:rotate-12 transition-transform duration-300">
+                    <flux:icon name="receipt-percent" variant="outline" class="w-6 h-6" />
+                </div>
+            </div>
+            <div class="absolute -bottom-2 -right-2 opacity-5 scale-150 rotate-12 text-pink-600 dark:text-pink-400">
+                <flux:icon name="receipt-percent" class="w-20 h-20" />
+            </div>
         </flux:card>
     </div>
 
@@ -282,6 +322,7 @@ new class extends Component {
             chart: null,
             init() {
                 if (this.chart) this.chart.destroy();
+                const isDark = document.documentElement.classList.contains('dark');
 
                 const options = {
                     series: @js($this->chartData['series']),
@@ -314,16 +355,16 @@ new class extends Component {
                         axisTicks: { show: false },
                         labels: {
                             style: {
-                                colors: '#9ca3af',
-                                fontSize: '12px'
+                                colors: 'var(--color-zinc-400)',
+                                fontSize: '11px'
                             }
                         }
                     },
                     yaxis: {
                         labels: {
                             style: {
-                                colors: '#9ca3af',
-                                fontSize: '12px'
+                                colors: 'var(--color-zinc-500)',
+                                fontSize: '11px'
                             },
                             formatter: (value) => {
                                 return new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(value)
@@ -331,15 +372,16 @@ new class extends Component {
                         }
                     },
                     grid: {
-                        borderColor: '#f3f4f6',
+                        borderColor: isDark ? '#334155' : '#e2e8f0',
                         strokeDashArray: 4,
                     },
                     theme: {
-                        mode: document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+                        mode: isDark ? 'dark' : 'light'
                     },
                     legend: {
                         position: 'top',
-                        horizontalAlign: 'right'
+                        horizontalAlign: 'right',
+                        labels: { colors: 'var(--color-zinc-500)' }
                     }
                 };
 

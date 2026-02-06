@@ -1,0 +1,423 @@
+Table Summary: Pesantren System
+
+Table: schools
+- id (ulid)
+- name
+- slug
+- address
+- phone
+- email
+- website
+- theme_color
+- logo_path
+- timestamps
+
+Table: users
+- id (ulid)
+- school_id
+- name
+- email
+- phone_number
+- password
+- fcm_token
+- timestamps
+
+Table: password_reset_tokens
+- email
+- token
+- created_at
+
+Table: sessions
+- id
+- user_id
+- ip_address
+- user_agent
+- payload
+- last_activity
+
+Table: cache
+- key
+- value
+- expiration
+
+Table: cache_locks
+- key
+- owner
+- expiration
+
+Table: jobs
+- id
+- queue
+- payload
+- attempts
+- reserved_at
+- available_at
+- created_at
+
+Table: job_batches
+- id
+- name
+- total_jobs
+- pending_jobs
+- failed_jobs
+- failed_job_ids
+- options
+- cancelled_at
+- created_at
+- finished_at
+
+Table: failed_jobs
+- id
+- uuid
+- connection
+- queue
+- payload
+- exception
+- failed_at
+
+Table: permissions
+- id
+- name
+- guard_name
+- timestamps
+
+Table: roles
+- id
+- name
+- guard_name
+- timestamps
+
+Table: model_has_permissions
+- permission_id
+- model_type
+- model_id
+
+Table: model_has_roles
+- role_id
+- model_type
+- model_id
+
+Table: role_has_permissions
+- permission_id
+- role_id
+
+Table: levels
+- id (ulid)
+- school_id
+- department_id
+- grade_level
+- name
+- alias
+- timestamps
+
+Table: students
+- id (ulid)
+- school_id
+- nis
+- full_name
+- parent_user_id
+- needs_parent_verification
+- level_id
+- wallet_balance
+- wallet_pin
+- daily_cash_limit
+- allow_transaction
+- status (ACTIVE, INACTIVE, GRADUATED, DROPPED_OUT)
+- gender (L, P)
+- birth_date
+- photo_url
+- timestamps
+
+Table: events
+- id (ulid)
+- school_id
+- title
+- description
+- event_date
+- start_time
+- end_time
+- is_paid
+- amount
+- participation_type
+- timestamps
+
+Table: event_level
+- id
+- event_id
+- level_id
+- timestamps
+
+Table: bill_categories
+- id (ulid)
+- school_id
+- name
+- description
+- timestamps
+
+Table: bills
+- id (ulid)
+- school_id
+- invoice_code
+- student_id
+- bill_category_id
+- event_id
+- title
+- bill_code
+- amount
+- payment_fee
+- admin_fee
+- status (UNPAID, PAID, CANCELLED)
+- due_date
+- paid_at
+- payment_method
+- timestamps
+
+Table: wallet_transactions
+- id (ulid)
+- school_id
+- invoice_code
+- student_id
+- operator_id
+- pic_user_id
+- type (CREDIT, DEBIT)
+- category (TOPUP, WITHDRAWAL, PURCHASE, DEPOSIT_TO_HQ)
+- amount
+- payment_fee
+- admin_fee
+- description
+- payment_method (cash, payment_gateway)
+- status (UNPAID, PAID, CANCELLED)
+- timestamps
+
+Table: attendances
+- id (ulid)
+- school_id
+- student_id
+- date
+- clock_in
+- status (PRESENT, LATE, ABSENT, EXCUSED)
+- timestamps
+
+Table: event_attendances
+- id (ulid)
+- event_id
+- student_id
+- check_in_time
+- status (string)
+- timestamps
+
+Table: settings
+- id
+- school_id
+- key
+- value
+- timestamps
+
+Table: activities
+- id (ulid)
+- school_id
+- level_id
+- name
+- type
+- description
+- timestamps
+
+Table: activity_attendances
+- id (ulid)
+- school_id
+- student_id
+- activity_id
+- date
+- status
+- remarks
+- timestamps
+
+Table: admin_deposits
+- id (ulid)
+- school_id
+- user_id
+- amount
+- proof_image
+- status (pending, confirmed, rejected)
+- deposited_at
+- confirmed_at
+- notes
+- timestamps
+
+Table: payment_channels
+- id
+- code
+- name
+- type
+- fee_flat
+- fee_percent
+- is_active
+- icon
+- timestamps
+
+Table: feedback
+- id
+- school_id
+- user_id
+- sender_name
+- email
+- phone
+- category
+- message
+- admin_reply
+- replied_at
+- is_read
+- timestamps
+
+Table: achievements
+- id (ulid)
+- title
+- school_id
+- student_id
+- date_achieved
+- description
+- images (json)
+- timestamps
+
+Table: video_lectures
+- id (ulid)
+- title
+- school_id
+- youtube_url
+- description
+- published_at
+- timestamps
+
+Table: sowan_schedules
+- id (ulid)
+- school_id
+- guest_name
+- request_date
+- topic
+- status (pending, confirmed, completed)
+- timestamps
+
+Table: student_permissions
+- id (ulid)
+- school_id
+- student_id
+- student_name
+- reason
+- start_date
+- end_date
+- status (pending, approved, rejected)
+- admin_note
+- timestamps
+
+Table: departments
+- id (ulid)
+- school_id
+- name
+- code
+- description
+- timestamps
+
+Table: academic_years
+- id (ulid)
+- school_id
+- name
+- start_date
+- end_date
+- is_active
+- timestamps
+
+Table: student_academics
+- id (ulid)
+- student_id
+- level_id
+- academic_year_id
+- semester
+- average_grade
+- rank
+- notes
+- status (ONGOING, PROMOTED, RETAINED, GRADUATED, TRANSFERRED)
+- timestamps
+
+Table: semesters
+- id (ulid)
+- academic_year_id
+- school_id
+- type (GANJIL, GENAP)
+- start_date
+- end_date
+- timestamps
+
+Table: student_reports
+- id (ulid)
+- student_id
+- semester_id
+- school_id
+- file_path
+- uploaded_by
+- timestamps
+
+Table: academic_promotions_log
+- id (ulid)
+- student_id
+- from_academic_year_id
+- to_academic_year_id
+- action (PROMOTE, RETAIN, GRADUATE, TRANSFER_OUT)
+- executed_by
+- executed_at
+- from_level_id
+- to_level_id
+- timestamps
+
+Table: student_cards
+- id (ulid)
+- student_id
+- issued_by
+- card_number
+- issued_at
+- expires_at
+- status (generated, request_print, printed)
+- timestamps
+
+Table: personal_access_tokens
+- id
+- tokenable_id (ulid)
+- tokenable_type
+- name
+- token
+- abilities
+- last_used_at
+- expires_at
+- timestamps
+
+Table: withdrawals
+- id (ulid)
+- school_id
+- requested_by
+- approved_by
+- amount
+- bank_name
+- account_number
+- account_holder_name
+- status (REQUESTED, APPROVED, REJECTED, PAID)
+- source_type (REVENUE, TRUST_FUND)
+- locked_at
+- requested_balance_snapshot
+- requested_at
+- approved_at
+- rejected_at
+- paid_at
+- rejection_reason
+- notes
+- payment_proof
+- timestamps
+
+Table: news
+- id (ulid)
+- school_id
+- author_id
+- title
+- content
+- images (json)
+- target_role
+- is_published
+- timestamps

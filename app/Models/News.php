@@ -2,48 +2,43 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUlids;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class News extends Model
 {
-    use HasFactory, HasUlids, \App\Traits\HasSchoolScope;
+    use HasFactory, HasUlids;
 
     protected $fillable = [
         'school_id',
+        'author_id',
         'title',
-        'slug',
         'content',
-        'image_path',
+        'images',
+        'target_role',
         'is_published',
-        'published_at',
     ];
 
     protected $casts = [
         'is_published' => 'boolean',
-        'published_at' => 'datetime',
+        'images' => 'array',
     ];
 
-    public function school()
+    /**
+     * Get the author of the news.
+     */
+    public function author(): BelongsTo
     {
-        return $this->belongsTo(School::class);
-    }
-    
-    // Auto-generate slug
-    protected static function boot()
-    {
-        parent::boot();
-        static::creating(function ($news) {
-            if (empty($news->slug)) {
-                $news->slug = Str::slug($news->title);
-            }
-        });
+        return $this->belongsTo(User::class, 'author_id');
     }
 
-    public function getImageUrlAttribute()
+    /**
+     * Get the school associated with the news.
+     */
+    public function school(): BelongsTo
     {
-        return $this->image_path ? asset('storage/' . $this->image_path) : null;
+        return $this->belongsTo(School::class);
     }
 }

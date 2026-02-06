@@ -15,24 +15,17 @@
 
         <flux:sidebar.nav>
             <flux:sidebar.group :heading="__('Platform')">
-                @role('admin')
-                <flux:sidebar.item icon="building-library" :href="route('dashboard.admin')" :current="request()->routeIs('dashboard.admin')"
-                    wire:navigate>
-                    {{ __('Dashboard Pesantren') }}
-                </flux:sidebar.item>
-                @else
-                <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
+                <flux:sidebar.item icon="home" :href="route('dashboard')"
+                    :current="request()->routeIs(['dashboard', 'super-admin.dashboard', 'admin.dashboard', 'koperasi.dashboard'])"
                     wire:navigate>
                     {{ __('Dashboard') }}
                 </flux:sidebar.item>
-                @endrole
 
-                @role('super_admin')
-                <flux:sidebar.item icon="presentation-chart-line" :href="route('dashboard.super-admin')"
-                    :current="request()->routeIs('dashboard.super-admin')" wire:navigate>
-                    {{ __('Super Admin') }}
+
+                <flux:sidebar.item icon="newspaper" :href="route('news.index')"
+                    :current="request()->routeIs('news.index')" wire:navigate>
+                    {{ __('Berita & Pengumuman') }}
                 </flux:sidebar.item>
-                @endrole
             </flux:sidebar.group>
 
             @role('admin')
@@ -131,6 +124,11 @@
                     :current="request()->routeIs('student-cards.*')" wire:navigate>
                     {{ __('Kartu Santri') }}
                 </flux:sidebar.item>
+
+                <flux:sidebar.item icon="newspaper" :href="route('news.index')"
+                    :current="request()->routeIs('news.index')" wire:navigate>
+                    {{ __('Berita & Pengumuman') }}
+                </flux:sidebar.item>
             </flux:sidebar.group>
             @endrole
 
@@ -164,7 +162,19 @@
 
             @hasanyrole('super_admin|admin')
             <flux:sidebar.group :heading="__('Keuangan')">
+                @role('admin')
+                <flux:sidebar.item icon="presentation-chart-line" :href="route('admin.financial')"
+                    :current="request()->routeIs('admin.financial')" wire:navigate>
+                    {{ __('Dashboard Keuangan') }}
+                </flux:sidebar.item>
+                @endrole
+
                 @role('super_admin')
+                <flux:sidebar.item icon="presentation-chart-line" :href="route('super-admin.financial')"
+                    :current="request()->routeIs('super-admin.financial')" wire:navigate>
+                    {{ __('Dashboard Keuangan') }}
+                </flux:sidebar.item>
+
                 <flux:sidebar.item icon="credit-card" :href="route('payment-methods.index')"
                     :current="request()->routeIs('payment-methods.*')" wire:navigate>
                     {{ __('Metode Pembayaran') }}
@@ -191,9 +201,40 @@
                     :current="request()->routeIs('event-bills.*')" wire:navigate>
                     {{ __('Tagihan Kegiatan') }}
                 </flux:sidebar.item>
+
+                <flux:sidebar.item icon="currency-dollar" :href="route('dashboard.admin.withdrawals')"
+                    :current="request()->routeIs('dashboard.admin.withdrawals')" wire:navigate>
+                    {{ __('Penarikan Dana') }}
+                </flux:sidebar.item>
+
+                <flux:sidebar.item icon="banknotes" :href="route('dashboard.admin.student-cash-withdrawal')"
+                    :current="request()->routeIs('dashboard.admin.student-cash-withdrawal')" wire:navigate>
+                    {{ __('Penarikan Uang Saku') }}
+                </flux:sidebar.item>
+                @endrole
+
+                @role('super_admin')
+                <flux:sidebar.item icon="banknotes" :href="route('dashboard.super-admin.withdrawals')"
+                    :current="request()->routeIs('dashboard.super-admin.withdrawals')" wire:navigate>
+                    {{ __('Kelola Penarikan') }}
+                </flux:sidebar.item>
                 @endrole
             </flux:sidebar.group>
             @endhasanyrole
+
+            @role('admin_koperasi')
+            <flux:sidebar.group :heading="__('Koperasi')">
+                <flux:sidebar.item icon="shopping-cart" :href="route('koperasi.pos')"
+                    :current="request()->routeIs('koperasi.pos')" wire:navigate>
+                    {{ __('Point of Sale (POS)') }}
+                </flux:sidebar.item>
+
+                <flux:sidebar.item icon="clock" :href="route('koperasi.history')"
+                    :current="request()->routeIs('koperasi.history')" wire:navigate>
+                    {{ __('Riwayat Pembelian') }}
+                </flux:sidebar.item>
+            </flux:sidebar.group>
+            @endrole
         </flux:sidebar.nav>
 
         <flux:spacer />
