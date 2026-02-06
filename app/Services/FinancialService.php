@@ -461,12 +461,7 @@ class FinancialService
             throw new \Exception('PIN belum diatur. Harap hubungi administrator.');
         }
 
-        // Assuming PIN is stored explicitly or hash check needed. 
-        // Based on typical flows, if it's plain (bad practice but possible) or hashed.
-        // Let's assume standard Hash check if it looks hashed, or simple comparison.
-        // Checking Student model "wallet_pin" usage. 
-        // If it's a simple 6 digit string in DB:
-        if ($student->wallet_pin !== $pin) {
+        if (!\Illuminate\Support\Facades\Hash::check($pin, $student->wallet_pin)) {
              throw new \Exception('PIN salah.');
         }
 

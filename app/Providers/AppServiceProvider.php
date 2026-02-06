@@ -26,6 +26,10 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
 
+        \Illuminate\Support\Facades\Gate::define('koperasi-only', function ($user) {
+            return $user->hasAnyRole(['admin_koperasi', 'admin', 'super_admin']);
+        });
+
         \App\Models\AcademicYear::observe(\App\Observers\AcademicYearObserver::class);
 
         if (app()->environment('local')) {

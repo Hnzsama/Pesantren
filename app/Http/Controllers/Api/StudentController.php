@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Student;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class StudentController extends Controller
 {
@@ -39,6 +40,7 @@ class StudentController extends Controller
                 'wallet_balance' => $student->wallet_balance,
                 'daily_cash_limit' => $student->daily_cash_limit,
                 'allow_transaction' => $student->allow_transaction,
+                'has_pin' => $student->hasPin(),
                 'level' => $student->level ? [
                     'id' => $student->level->id,
                     'name' => $student->level->name,
@@ -75,7 +77,66 @@ class StudentController extends Controller
 
         return response()->json([
             'wallet_balance' => $student->wallet_balance,
+            'has_pin' => $student->hasPin(),
         ]);
+    }
+
+    /**
+     * Update student wallet PIN.
+     */
+    public function updatePin(Request $request, $id)
+    {
+        $request->validate([
+            'pin' => 'required|digits:6|confirmed',
+        ], [
+            'pin.required' => 'PIN wajib diisi.',
+            'pin.digits' => 'PIN harus berupa 6 digit angka.',
+            'pin.confirmed' => 'Konfirmasi PIN tidak cocok.',
+        ]);
+
+        $user = $request->user();
+        $student = Student::where('id', $id)
+            ->where('parent_user_id', $user->id)
+            ->first();
+
+        if (!$student) {
+            return response()->json(['message' => 'Student not found or unauthorized.'], 404);
+        }
+
+        $student->update([
+            'wallet_pin' => Hash::make($request->pin),
+        ]);
+
+        return response()->json(['message' => 'Wallet PIN berhasil diperbarui.']);
+    }
+
+    /**
+     * Update student daily cash limit.
+     */
+    public function updateDailyLimit(Request $request, $id)
+    {
+        $request->validate([
+            'daily_cash_limit' => 'required|numeric|min:0',
+        ], [
+            'daily_cash_limit.required' => 'Limit harian wajib diisi.',
+            'daily_cash_limit.numeric' => 'Limit harian harus berupa angka.',
+            'daily_cash_limit.min' => 'Limit harian tidak boleh negatif.',
+        ]);
+
+        $user = $request->user();
+        $student = Student::where('id', $id)
+            ->where('parent_user_id', $user->id)
+            ->first();
+
+        if (!$student) {
+            return response()->json(['message' => 'Student not found or unauthorized.'], 404);
+        }
+
+        $student->update([
+            'daily_cash_limit' => $request->daily_cash_limit,
+        ]);
+
+        return response()->json(['message' => 'Limit tarik tunai harian berhasil diperbarui.']);
     }
 }
 

@@ -23,6 +23,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/activities', [\App\Http\Controllers\Api\ActivityController::class, 'index']);
     Route::get('/students/{id}', [\App\Http\Controllers\Api\StudentController::class, 'show']);
     Route::get('/students/{id}/wallet', [\App\Http\Controllers\Api\StudentController::class, 'wallet']);
+    Route::post('/students/{id}/wallet/pin', [\App\Http\Controllers\Api\StudentController::class, 'updatePin']);
+    Route::post('/students/{id}/wallet/limit', [\App\Http\Controllers\Api\StudentController::class, 'updateDailyLimit']);
     Route::get('/bills', [\App\Http\Controllers\Api\BillController::class, 'index']);
     Route::get('/bills/{id}', [\App\Http\Controllers\Api\BillController::class, 'show']);
     Route::post('/bills/{id}/pay', [\App\Http\Controllers\Api\BillController::class, 'pay']);
@@ -34,6 +36,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/student-cards', [\App\Http\Controllers\Api\StudentCardController::class, 'index']);
     Route::get('/student-cards/{id}', [\App\Http\Controllers\Api\StudentCardController::class, 'show']);
     Route::get('/student-cards/number/{cardNumber}', [\App\Http\Controllers\Api\StudentCardController::class, 'getByCardNumber']);
+
+    // News API
+    Route::apiResource('news', \App\Http\Controllers\Api\NewsController::class)->names('api.news');
 });
 
 Route::post('/midtrans/callback', [PaymentController::class, 'callback']);

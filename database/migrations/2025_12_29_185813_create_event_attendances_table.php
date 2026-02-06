@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignUlid('event_id')->constrained('events')->cascadeOnDelete();
             $table->foreignUlid('student_id')->constrained('students')->cascadeOnDelete();
             $table->dateTime('check_in_time');
-            $table->enum('status', ['PRESENT', 'LATE']);
+            $table->string('status', 20);
             $table->timestamps();
         });
     }

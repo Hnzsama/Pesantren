@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Url;
+use Livewire\Attributes\Lazy;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
@@ -14,8 +15,50 @@ use App\Services\ImageCompressionService;
 use Illuminate\Support\Str;
 use Flux\Flux;
 
-new class extends Component {
+new #[Lazy] class extends Component {
     use WithPagination, WithFileUploads;
+
+    public function placeholder()
+    {
+        return <<<'HTML'
+        <div class="space-y-6 w-full">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div class="space-y-2">
+                    <div class="h-10 w-48 bg-zinc-100 dark:bg-zinc-800 rounded animate-pulse"></div>
+                    <div class="h-4 w-64 bg-zinc-50 dark:bg-zinc-900 rounded animate-pulse"></div>
+                </div>
+                <div class="flex gap-2">
+                    <div class="h-10 w-24 bg-zinc-100 dark:bg-zinc-800 rounded-lg animate-pulse"></div>
+                    <div class="h-10 w-32 bg-zinc-100 dark:bg-zinc-800 rounded-lg animate-pulse"></div>
+                    <div class="h-10 w-36 bg-zinc-200 dark:bg-zinc-700 rounded-lg animate-pulse"></div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="h-10 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 animate-pulse"></div>
+                <div class="h-10 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 animate-pulse"></div>
+                <div class="h-10 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 animate-pulse"></div>
+                <div class="h-10 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 animate-pulse"></div>
+            </div>
+
+            <div class="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                <div class="p-6 bg-white dark:bg-zinc-900 space-y-4">
+                    @foreach(range(1, 5) as $i)
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 animate-pulse"></div>
+                            <div class="flex-1 space-y-2">
+                                <div class="h-4 bg-zinc-100 dark:bg-zinc-800 rounded w-1/4 animate-pulse"></div>
+                                <div class="h-3 bg-zinc-50 dark:bg-zinc-900 rounded w-1/6 animate-pulse"></div>
+                            </div>
+                            <div class="w-24 h-6 bg-zinc-50 dark:bg-zinc-900 rounded animate-pulse"></div>
+                        </div>
+                        <div class="h-px bg-zinc-100 dark:bg-zinc-800 w-full"></div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        HTML;
+    }
 
     #[Url]
     public $tab = 'all';
@@ -70,10 +113,11 @@ new class extends Component {
     public function with(): array
     {
         $user = auth()->user();
+        $schoolId = $user->school_id;
 
         // Base Query
         $query = Student::query()
-            ->with(['school', 'level', 'level.department', 'parent', 'card'])
+            ->with(['school', 'level:id,name,department_id', 'level.department:id,name', 'parent:id,name', 'card:id,student_id,card_number,status'])
             ->orderBy('full_name');
 
         // Apply Scope based on Tab
@@ -81,41 +125,40 @@ new class extends Component {
             $query->incomplete();
         }
 
-        // Filter by School
-        if ($user->hasRole('admin')) {
-            $query->where('school_id', $user->school_id);
-        }
-
         // Apply filters
-        $query->when($this->search, fn($q) => $q->where('full_name', 'like', '%' . $this->search . '%')
-            ->orWhere('nis', 'like', '%' . $this->search . '%'))
+        $query->when($this->search, fn($q) => $q->where(function ($sub) {
+            $sub->where('full_name', 'like', '%' . $this->search . '%')
+                ->orWhere('nis', 'like', '%' . $this->search . '%');
+        }))
             ->when($this->levelFilter, fn($q) => $q->where('level_id', $this->levelFilter))
             ->when($this->departmentFilter, fn($q) => $q->whereHas('level', fn($l) => $l->where('department_id', $this->departmentFilter)))
             ->when($this->parentFilter, fn($q) => $q->where('parent_user_id', $this->parentFilter));
 
         // Data for filters
-        $schoolId = $user->hasRole('admin') ? $user->school_id : null;
-
         $departments = Department::query()
+            ->select('id', 'name')
             ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
             ->get();
 
         $levels = Level::query()
-            ->with('department')
+            ->select('id', 'name', 'department_id')
+            ->with('department:id,name')
             ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
             ->when($this->departmentFilter, fn($q) => $q->where('department_id', $this->departmentFilter))
             ->get();
 
         $parents = User::role('wali_santri')
+            ->select('users.id', 'users.name')
             ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
             ->orderBy('name')
             ->get();
 
         return [
-            'students' => $query->paginate(10),
+            'students' => $query->paginate(15),
             'levels' => $levels,
             'departments' => $departments,
             'parents' => $parents,
+            'currentStudentInstance' => $this->studentId ? Student::find($this->studentId) : null,
         ];
     }
 
@@ -760,26 +803,26 @@ new class extends Component {
                 <flux:error name="parent_user_id" />
             </flux:field>
 
-            @if($studentId)
+            @if($studentId && $currentStudentInstance)
                 <div class="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-700">
                     <flux:heading size="sm" class="mb-2">Info Dompet (Read Only)</flux:heading>
                     <div class="text-xs text-zinc-500 space-y-1">
                         <div class="flex justify-between">
                             <span>PIN Status:</span>
                             <span
-                                class="font-medium {{ $this->studentId && Student::find($this->studentId)->hasPin() ? 'text-emerald-600' : 'text-amber-600' }}">
-                                {{ $this->studentId && Student::find($this->studentId)->hasPin() ? 'Terpasang' : 'Belum Terpasang' }}
+                                class="font-medium {{ $currentStudentInstance->hasPin() ? 'text-emerald-600' : 'text-amber-600' }}">
+                                {{ $currentStudentInstance->hasPin() ? 'Terpasang' : 'Belum Terpasang' }}
                             </span>
                         </div>
                         <div class="flex justify-between">
                             <span>Limit Harian:</span>
                             <span class="font-medium">Rp
-                                {{ number_format($this->studentId ? Student::find($this->studentId)->daily_cash_limit : 0, 0, ',', '.') }}</span>
+                                {{ number_format($currentStudentInstance->daily_cash_limit, 0, ',', '.') }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span>Izin Transaksi:</span>
                             <span
-                                class="font-medium">{{ $this->studentId && Student::find($this->studentId)->allow_transaction ? 'Diizinkan' : 'Diblokir' }}</span>
+                                class="font-medium">{{ $currentStudentInstance->allow_transaction ? 'Diizinkan' : 'Diblokir' }}</span>
                         </div>
                     </div>
                 </div>
