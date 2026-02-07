@@ -61,7 +61,7 @@ new #[Lazy] class extends Component {
     {
         $schoolId = auth()->user()->school_id;
 
-        $query = WalletTransaction::with('student', 'operator')
+        $query = WalletTransaction::with(['student', 'operator', 'items'])
             ->where('school_id', $schoolId)
             ->where('category', 'PURCHASE')
             ->orderBy('created_at', 'desc');
@@ -122,6 +122,7 @@ new #[Lazy] class extends Component {
             <flux:table.column>Waktu</flux:table.column>
             <flux:table.column>Invoice</flux:table.column>
             <flux:table.column>Santri</flux:table.column>
+            <flux:table.column>Barang/Jasa</flux:table.column>
             <flux:table.column>Nominal</flux:table.column>
             <flux:table.column>Operator</flux:table.column>
             <flux:table.column align="end"></flux:table.column>
@@ -144,6 +145,20 @@ new #[Lazy] class extends Component {
                             <span class="font-medium">{{ $transaction->student->full_name }}</span>
                             <span class="text-xs text-zinc-500">{{ $transaction->student->nis }}</span>
                         </div>
+                    </flux:table.cell>
+                    <flux:table.cell>
+                        @if($transaction->items->isNotEmpty())
+                            <div class="space-y-1">
+                                @foreach($transaction->items->take(2) as $item)
+                                    <div class="text-xs font-medium uppercase truncate max-w-[150px]">{{ $item->product_name }}</div>
+                                @endforeach
+                                @if($transaction->items->count() > 2)
+                                    <div class="text-[10px] text-zinc-400">+{{ $transaction->items->count() - 2 }} item lainnya</div>
+                                @endif
+                            </div>
+                        @else
+                            <span class="text-xs text-zinc-400 italic">Data tidak tersedia</span>
+                        @endif
                     </flux:table.cell>
                     <flux:table.cell class="font-bold text-red-600 dark:text-red-400">
                         -Rp {{ number_format($transaction->amount, 0, ',', '.') }}
@@ -203,6 +218,27 @@ new #[Lazy] class extends Component {
                         <span class="font-medium text-sm">{{ $transaction->operator->name ?? '-' }}</span>
                     </div>
                 </div>
+
+                @if ($transaction->items->isNotEmpty())
+                    <div class="space-y-4">
+                        <flux:heading size="sm" class="uppercase tracking-widest text-zinc-400">Daftar Barang</flux:heading>
+                        <div class="rounded-xl border border-zinc-200 dark:border-zinc-800 divide-y dark:divide-zinc-800">
+                            @foreach ($transaction->items as $item)
+                                <div class="p-3 flex justify-between items-center">
+                                    <div class="flex-1">
+                                        <div class="text-sm font-bold uppercase">{{ $item->product_name }}</div>
+                                        <div class="text-[10px] text-zinc-500">{{ $item->quantity }} x Rp
+                                            {{ number_format($item->price, 0, ',', '.') }}
+                                        </div>
+                                    </div>
+                                    <div class="text-sm font-black">
+                                        Rp {{ number_format($item->subtotal, 0, ',', '.') }}
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
 
                 <div class="flex justify-end">
                     <flux:modal.close>
