@@ -216,13 +216,13 @@ class TransactionService
     }
 
     /**
-     * Process POS purchase transaction
+     * Process POS purchase transaction with optional items and stock deduction
      * 
      * @throws \Exception
      */
-    public function processPurchase(Student $student, float $amount, string $pin, User $operator): WalletTransaction
+    public function processPurchase(Student $student, float $amount, string $pin, User $operator, array $items = []): WalletTransaction
     {
-        return DB::transaction(function () use ($student, $amount, $pin, $operator) {
+        return DB::transaction(function () use ($student, $amount, $pin, $operator, $items) {
             // 1. Basic Validations
             if (!$student->allow_transaction) {
                 throw new \Exception('Transaksi diblokir. Hubungi admin untuk aktivasi akun.');
@@ -242,10 +242,27 @@ class TransactionService
                 throw new \Exception('Saldo tidak cukup. Saldo Anda: Rp ' . number_format($student->wallet_balance, 0, ',', '.'));
             }
 
-            // 4. Processing
+            // 4. Stock Check (If items provided)
+            $productsToUpdate = [];
+            foreach ($items as $item) {
+                $product = \App\Models\Product::findOrFail($item['product_id']);
+                
+                if ($product->type === 'PRODUCT') {
+                    if ($product->stock < $item['quantity']) {
+                        throw new \Exception("Stok tidak cukup untuk: {$product->name}. Tersisa: {$product->stock}");
+                    }
+                    $productsToUpdate[] = [
+                        'product' => $product,
+                        'quantity' => $item['quantity']
+                    ];
+                }
+            }
+
+            // 5. Processing - Decrement Balance
             $student->decrement('wallet_balance', $amount);
 
-            return WalletTransaction::create([
+            // 6. Create Transaction
+            $transaction = WalletTransaction::create([
                 'school_id' => $student->school_id,
                 'invoice_code' => 'PURC-' . strtoupper(uniqid()),
                 'student_id' => $student->id,
@@ -254,12 +271,51 @@ class TransactionService
                 'type' => 'DEBIT',
                 'category' => 'PURCHASE',
                 'amount' => $amount,
-                'payment_method' => 'cash', // 'cash' represents domestic/local payment
+                'payment_method' => 'cash',
                 'status' => 'PAID',
                 'description' => 'Pembelian Koperasi - Kasir: ' . $operator->name,
+                'product_id' => count($items) === 1 ? $items[0]['product_id'] : null, // Set for single items
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            // 7. Save Transaction Items
+            foreach ($items as $itemData) {
+                $product = \App\Models\Product::find($itemData['product_id']);
+                \App\Models\WalletTransactionItem::create([
+                    'wallet_transaction_id' => $transaction->id,
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'quantity' => $itemData['quantity'],
+                    'price' => $product->price,
+                    'subtotal' => $product->price * $itemData['quantity'],
+                ]);
+            }
+
+            // 8. Update Stock & Log Movements
+            foreach ($productsToUpdate as $data) {
+                $product = $data['product'];
+                $qty = $data['quantity'];
+                $oldStock = $product->stock;
+                $newStock = $oldStock - $qty;
+
+                $product->update(['stock' => $newStock]);
+
+                \App\Models\ProductMovement::create([
+                    'school_id' => $product->school_id,
+                    'product_id' => $product->id,
+                    'type' => 'OUT',
+                    'quantity' => $qty,
+                    'stock_before' => $oldStock,
+                    'stock_after' => $newStock,
+                    'source' => 'POS',
+                    'reference_id' => $transaction->invoice_code,
+                    'note' => 'Penjualan POS',
+                    'pic_user_id' => $operator->id,
+                ]);
+            }
+
+            return $transaction;
         });
     }
 }

@@ -30,6 +30,7 @@ class WalletTransaction extends Model
         'description',
         'payment_method',
         'status',
+        'product_id',
     ];
 
     public function school()
@@ -60,5 +61,15 @@ class WalletTransaction extends Model
     public function scopeCash($query)
     {
         return $query->where('payment_method', self::PAYMENT_METHOD_CASH);
+    }
+
+    public function items()
+    {
+        return $this->hasMany(WalletTransactionItem::class);
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
     }
 }
