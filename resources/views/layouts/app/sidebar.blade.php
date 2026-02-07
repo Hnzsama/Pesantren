@@ -125,10 +125,7 @@
                     {{ __('Kartu Santri') }}
                 </flux:sidebar.item>
 
-                <flux:sidebar.item icon="newspaper" :href="route('news.index')"
-                    :current="request()->routeIs('news.index')" wire:navigate>
-                    {{ __('Berita & Pengumuman') }}
-                </flux:sidebar.item>
+
             </flux:sidebar.group>
             @endrole
 
@@ -232,6 +229,21 @@
                 <flux:sidebar.item icon="clock" :href="route('koperasi.history')"
                     :current="request()->routeIs('koperasi.history')" wire:navigate>
                     {{ __('Riwayat Pembelian') }}
+                </flux:sidebar.item>
+
+                <flux:sidebar.item icon="archive-box" :href="route('koperasi.products')"
+                    :current="request()->routeIs('koperasi.products')" wire:navigate>
+                    {{ __('Produk & Jasa') }}
+                </flux:sidebar.item>
+
+                <flux:sidebar.item icon="clipboard-document-check" :href="route('koperasi.stock-opname')"
+                    :current="request()->routeIs('koperasi.stock-opname')" wire:navigate>
+                    {{ __('Stok Opname') }}
+                </flux:sidebar.item>
+
+                <flux:sidebar.item icon="arrows-right-left" :href="route('koperasi.stock-history')"
+                    :current="request()->routeIs('koperasi.stock-history')" wire:navigate>
+                    {{ __('Riwayat Stok') }}
                 </flux:sidebar.item>
             </flux:sidebar.group>
             @endrole
