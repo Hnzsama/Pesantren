@@ -2,7 +2,7 @@
 
 ## Base URL
 
-```
+```text
 https://your-domain.com/api
 ```
 
@@ -10,7 +10,7 @@ https://your-domain.com/api
 
 All endpoints require authentication via Laravel Sanctum. Include the Bearer token in the Authorization header:
 
-```
+```text
 Authorization: Bearer {token}
 ```
 
@@ -28,13 +28,13 @@ Retrieve a paginated list of news articles.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `school_id` | string (ULID) | No | Filter by school ID |
-| `target_role` | string | No | Filter by target role (`admin`, `guardian`, `student`, `all`) |
-| `include_unpublished` | boolean | No | Include unpublished news (default: false) |
-| `sort_by` | string | No | Sort field name (default: `created_at`) |
-| `sort_order` | string | No | Sort order: `asc` or `desc` (default: `desc`) |
-| `per_page` | integer | No | Items per page (default: 15) |
-| `page` | integer | No | Page number (default: 1) |
+| `school_id`           | string (ULID) | No       | Filter by school ID                                         |
+| `target_role`         | string        | No       | Filter by target role (`admin`, `guardian`, `student`, `all`) |
+| `include_unpublished` | boolean       | No       | Include unpublished news (default: false)                    |
+| `sort_by`             | string        | No       | Sort field name (default: `created_at`)                      |
+| `sort_order`          | string        | No       | Sort order: `asc` or `desc` (default: `desc`)                |
+| `per_page`            | integer       | No       | Items per page (default: 15)                                 |
+| `page`                | integer       | No       | Page number (default: 1)                                     |
 
 **Example Request:**
 
@@ -156,14 +156,14 @@ Create a new news article.
 
 **Request Body:**
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `school_id` | string (ULID) | No | School ID (null for global news) |
-| `title` | string | Yes | News title (max: 255 characters) |
-| `content` | string | Yes | News content (HTML supported) |
-| `images` | array | No | Array of image URLs or base64 strings |
-| `target_role` | string | Yes | Target audience: `admin`, `guardian`, `student`, `all` |
-| `is_published` | boolean | No | Publication status (default: true) |
+| Field          | Type          | Required | Description                           |
+|----------------|---------------|----------|---------------------------------------|
+| `school_id`    | string (ULID) | No       | School ID (null for global news)      |
+| `title`        | string        | Yes      | News title (max: 255 characters)      |
+| `content`      | string        | Yes      | News content (HTML supported)         |
+| `images`       | array         | No       | Array of image URLs or base64 strings |
+| `target_role`  | string        | Yes      | Target audience: `admin`, `guardian`, `student`, `all` |
+| `is_published` | boolean       | No       | Publication status (default: true)    |
 
 **Example Request:**
 
@@ -241,14 +241,14 @@ Update an existing news article.
 
 **Request Body:** (All fields are optional for PATCH, only send fields to update)
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `school_id` | string (ULID) | No | School ID |
-| `title` | string | No | News title (max: 255 characters) |
-| `content` | string | No | News content |
-| `images` | array | No | Array of image URLs |
-| `target_role` | string | No | Target audience |
-| `is_published` | boolean | No | Publication status |
+| Field          | Type          | Required | Description                           |
+|----------------|---------------|----------|---------------------------------------|
+| `school_id`    | string (ULID) | No       | School ID                             |
+| `title`        | string        | No       | News title (max: 255 characters)      |
+| `content`      | string        | No       | News content                          |
+| `images`       | array         | No       | Array of image URLs                   |
+| `target_role`  | string        | No       | Target audience                       |
+| `is_published` | boolean       | No       | Publication status                    |
 
 **Example Request:**
 
@@ -328,14 +328,14 @@ DELETE /api/news/01kgjknrxmahq3axv9wcqhjb12
 
 ## Error Codes
 
-| Status Code | Description |
-|-------------|-------------|
-| 200 | Success |
-| 201 | Created |
-| 401 | Unauthorized (missing or invalid token) |
-| 404 | Resource not found |
-| 422 | Validation error |
-| 500 | Internal server error |
+| Status Code | Description                              |
+|-------------|------------------------------------------|
+| 200         | Success                                  |
+| 201         | Created                                  |
+| 401         | Unauthorized (missing or invalid token)  |
+| 404         | Resource not found                       |
+| 422         | Validation error                         |
+| 500         | Internal server error                    |
 
 ---
 

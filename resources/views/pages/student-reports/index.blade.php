@@ -5,10 +5,30 @@ use App\Models\StudentReport;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Lazy;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-new class extends Component {
+new #[Lazy] class extends Component {
+    public function placeholder()
+    {
+        return <<<'HTML'
+        <div class="space-y-6 w-full animate-pulse">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div class="space-y-2">
+                    <div class="h-8 w-64 bg-zinc-200 dark:bg-zinc-800 rounded-lg"></div>
+                    <div class="h-4 w-48 bg-zinc-100 dark:bg-zinc-900 rounded-lg"></div>
+                </div>
+                <div class="h-10 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-lg"></div>
+            </div>
+            <div class="space-y-4">
+                <div class="h-12 w-full bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800"></div>
+                <div class="h-64 w-full bg-zinc-50 dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800"></div>
+            </div>
+        </div>
+        HTML;
+    }
+
     use WithPagination;
 
     // Filters
@@ -158,8 +178,8 @@ new class extends Component {
         </flux:table.rows>
     </flux:table>
 
-    <!-- Detail Flyout -->
-    <flux:modal name="report-detail" flyout class="space-y-6">
+    <!-- Detail Modal -->
+    <flux:modal name="report-detail" class="space-y-6">
         @if($detailReport)
             <div class="space-y-6">
                 <div>
@@ -201,7 +221,7 @@ new class extends Component {
                     <flux:label class="mb-2">File Rapor</flux:label>
 
                     @if(count($detailReport->files) > 0)
-                        <div class="grid grid-cols-1 gap-4">
+                        <div class="grid grid-cols-1 gap-4 max-h-[60vh] overflow-y-auto">
                             @foreach($detailReport->files as $index => $fileUrl)
                                 <div class="relative group">
                                     <div class="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-xs z-10">
@@ -209,7 +229,8 @@ new class extends Component {
                                     </div>
                                     <a href="{{ $fileUrl }}" target="_blank"
                                         class="block overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700 hover:shadow-md transition">
-                                        <img src="{{ $fileUrl }}" class="w-full object-contain">
+                                        <img src="{{ $fileUrl }}"
+                                            class="w-full h-auto max-h-[300px] object-contain bg-zinc-50 dark:bg-zinc-900">
                                     </a>
                                 </div>
                             @endforeach

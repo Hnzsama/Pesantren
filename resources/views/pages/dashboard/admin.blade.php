@@ -2,15 +2,31 @@
 
 use App\Models\Bill;
 use App\Models\WalletTransaction;
-use App\Models\BillCategory;
-use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Lazy;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-new class extends Component {
+new #[Lazy] class extends Component
+{
+    public function placeholder()
+    {
+        return <<<'HTML'
+        <div class="space-y-8 w-full animate-pulse">
+            <div class="h-10 w-64 bg-zinc-200 dark:bg-zinc-800 rounded-lg"></div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="h-32 bg-zinc-100 dark:bg-zinc-800 rounded-3xl border border-zinc-100 dark:border-zinc-800"></div>
+                <div class="h-32 bg-zinc-100 dark:bg-zinc-800 rounded-3xl border border-zinc-100 dark:border-zinc-800"></div>
+                <div class="h-32 bg-zinc-100 dark:bg-zinc-800 rounded-3xl border border-zinc-100 dark:border-zinc-800"></div>
+                <div class="h-32 bg-zinc-100 dark:bg-zinc-800 rounded-3xl border border-zinc-100 dark:border-zinc-800"></div>
+            </div>
+            <div class="h-96 bg-zinc-50 dark:bg-zinc-900 rounded-3xl border border-zinc-100 dark:border-zinc-800"></div>
+        </div>
+        HTML;
+    }
+
     use WithPagination;
 
     #[Url]
@@ -289,8 +305,8 @@ new class extends Component {
 
         // Wrap queries to allow filtering before union
         $applyFilters = function ($q) {
-            return $q->when($this->studentFilter, fn($query) => $query->where('student_id', $this->studentFilter))
-                ->when($this->statusFilter, fn($query) => $query->where('status', $this->statusFilter))
+            return $q->when($this->studentFilter, fn ($query) => $query->where('student_id', $this->studentFilter))
+                ->when($this->statusFilter, fn ($query) => $query->where('status', $this->statusFilter))
                 ->when($this->search, function ($query) {
                     $query->where(function ($sub) {
                         $sub->where('invoice_code', 'like', "%{$this->search}%")
@@ -304,26 +320,31 @@ new class extends Component {
         $studentWithdrawals = $applyFilters($studentWithdrawals);
         $studentPurchases = $applyFilters($studentPurchases);
         // HQ Withdrawals only gets search on description/id as it has no student/invoice
-        $hqWithdrawals = $hqWithdrawals->when($this->statusFilter, fn($q) => $q->where('status', $this->statusFilter))
-            ->when($this->search, fn($q) => $q->where('notes', 'like', "%{$this->search}%"));
+        $hqWithdrawals = $hqWithdrawals->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
+            ->when($this->search, fn ($q) => $q->where('notes', 'like', "%{$this->search}%"));
 
         // Final Query Construction
         $query = collect();
 
-        if (!$this->typeFilter || $this->typeFilter === 'IN') {
-            if (!$this->categoryFilter || $this->categoryFilter === 'BILL')
+        if (! $this->typeFilter || $this->typeFilter === 'IN') {
+            if (! $this->categoryFilter || $this->categoryFilter === 'BILL') {
                 $query->push($bills);
-            if (!$this->categoryFilter || $this->categoryFilter === 'TOPUP')
+            }
+            if (! $this->categoryFilter || $this->categoryFilter === 'TOPUP') {
                 $query->push($topups);
+            }
         }
 
-        if (!$this->typeFilter || $this->typeFilter === 'OUT') {
-            if (!$this->categoryFilter || $this->categoryFilter === 'WITHDRAWAL')
+        if (! $this->typeFilter || $this->typeFilter === 'OUT') {
+            if (! $this->categoryFilter || $this->categoryFilter === 'WITHDRAWAL') {
                 $query->push($studentWithdrawals);
-            if (!$this->categoryFilter || $this->categoryFilter === 'PURCHASE')
+            }
+            if (! $this->categoryFilter || $this->categoryFilter === 'PURCHASE') {
                 $query->push($studentPurchases);
-            if (!$this->categoryFilter || $this->categoryFilter === 'HQ_WITHDRAWAL')
+            }
+            if (! $this->categoryFilter || $this->categoryFilter === 'HQ_WITHDRAWAL') {
                 $query->push($hqWithdrawals);
+            }
         }
 
         if ($query->isEmpty()) {
@@ -342,8 +363,8 @@ new class extends Component {
         $studentIds = collect($paginator->items())->pluck('student_id')->unique()->filter()->toArray();
         $adminIds = collect($paginator->items())->pluck('requested_by_id')->unique()->filter()->toArray();
 
-        $studentNames = !empty($studentIds) ? \App\Models\Student::whereIn('id', $studentIds)->pluck('full_name', 'id') : collect();
-        $adminNames = !empty($adminIds) ? \App\Models\User::whereIn('id', $adminIds)->pluck('name', 'id') : collect();
+        $studentNames = ! empty($studentIds) ? \App\Models\Student::whereIn('id', $studentIds)->pluck('full_name', 'id') : collect();
+        $adminNames = ! empty($adminIds) ? \App\Models\User::whereIn('id', $adminIds)->pluck('name', 'id') : collect();
 
         $paginator->getCollection()->transform(function ($item) use ($studentNames, $adminNames) {
             if ($item->type === 'HQ_WITHDRAWAL') {
@@ -351,6 +372,7 @@ new class extends Component {
             } else {
                 $item->display_name = $studentNames[$item->student_id] ?? 'Unknown Santri';
             }
+
             return $item;
         });
 
