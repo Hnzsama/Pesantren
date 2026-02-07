@@ -618,7 +618,7 @@ new #[Lazy] class extends Component {
     </flux:tab.group>
 
     <!-- Modal Create/Edit -->
-    <flux:modal name="student-modal" flyout class="space-y-6 md:w-[30rem]">
+    <flux:modal name="student-modal" class="space-y-6 md:w-[30rem]">
         <form wire:submit="save" class="space-y-6" x-data="{ 
         cropping: false, 
         cropper: null, 
