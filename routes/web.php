@@ -96,6 +96,9 @@ Route::middleware(['auth'])->group(function () {
         Route::livewire('dashboard', 'pages::dashboard.cooperative-stat')->name('koperasi.dashboard');
         Route::livewire('pos', 'pages::dashboard.cooperative.pos')->name('koperasi.pos');
         Route::livewire('riwayat', 'pages::dashboard.cooperative.history')->name('koperasi.history');
+        Route::livewire('produk', 'pages::dashboard.cooperative.products')->name('koperasi.products');
+        Route::livewire('stok-opname', 'pages::dashboard.cooperative.stock-opname')->name('koperasi.stock-opname');
+        Route::livewire('riwayat-stok', 'pages::dashboard.cooperative.stock-history')->name('koperasi.stock-history');
     });
 });
 

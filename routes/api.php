@@ -39,6 +39,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // News API
     Route::apiResource('news', \App\Http\Controllers\Api\NewsController::class)->names('api.news');
+
+    // Reports API
+    Route::get('reports/filters', [\App\Http\Controllers\Api\ReportController::class, 'getFilters']);
+    Route::get('reports', [\App\Http\Controllers\Api\ReportController::class, 'index']);
 });
 
 Route::post('/midtrans/callback', [PaymentController::class, 'callback']);
