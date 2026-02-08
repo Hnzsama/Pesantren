@@ -236,35 +236,37 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                     @endif
                 </div>
 
-                <div class="max-h-[500px] overflow-y-auto border rounded-xl">
-                    <flux:table>
+                <!-- Scrollable container for the stock opname items table -->
+                <div class="max-h-[500px] overflow-y-auto overflow-x-auto border rounded-xl custom-scrollbar">
+                    <flux:table class="min-w-[600px] md:min-w-full">
                         <flux:table.columns>
                             <flux:table.column>Produk</flux:table.column>
-                            <flux:table.column>Stok Sistem</flux:table.column>
-                            <flux:table.column>Stok Fisik</flux:table.column>
-                            <flux:table.column>Selisih</flux:table.column>
+                            <flux:table.column class="whitespace-nowrap">Stok Sistem</flux:table.column>
+                            <flux:table.column class="whitespace-nowrap">Stok Fisik</flux:table.column>
+                            <flux:table.column class="whitespace-nowrap">Selisih</flux:table.column>
                         </flux:table.columns>
                         <flux:table.rows>
                             @foreach ($activeOpname->items as $item)
                                 <flux:table.row :key="$item->id">
                                     <flux:table.cell>
-                                        <div class="flex flex-col">
-                                            <span class="font-medium text-sm">{{ $item->product->name }}</span>
+                                        <div class="flex flex-col min-w-[200px]">
+                                            <span class="font-medium text-sm line-clamp-2">{{ $item->product->name }}</span>
                                             <span class="text-xs text-zinc-500">{{ $item->product->sku }}</span>
                                         </div>
                                     </flux:table.cell>
-                                    <flux:table.cell>{{ $item->system_stock }}</flux:table.cell>
+                                    <flux:table.cell class="text-center md:text-left">{{ $item->system_stock }}
+                                    </flux:table.cell>
                                     <flux:table.cell>
                                         @if ($activeOpname->status === 'DRAFT')
                                             <flux:input type="number"
                                                 wire:model.live.debounce.500ms="physicalStocks.{{ $item->product_id }}" size="sm"
-                                                class="w-24" />
+                                                class="w-20" />
                                         @else
                                             {{ $item->physical_stock }}
                                         @endif
                                     </flux:table.cell>
                                     <flux:table.cell
-                                        class="font-bold {{ $item->difference < 0 ? 'text-red-500' : ($item->difference > 0 ? 'text-green-500' : '') }}">
+                                        class="font-bold text-center md:text-left {{ $item->difference < 0 ? 'text-red-500' : ($item->difference > 0 ? 'text-green-500' : '') }}">
                                         {{ $item->difference > 0 ? '+' : '' }}{{ $item->difference }}
                                     </flux:table.cell>
                                 </flux:table.row>
@@ -273,10 +275,11 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                     </flux:table>
                 </div>
 
-                <div class="flex justify-between items-center">
-                    <flux:button variant="ghost" wire:click="$set('showDetailModal', false)">Tutup</flux:button>
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <flux:button variant="ghost" class="w-full md:w-auto" wire:click="$set('showDetailModal', false)">Tutup
+                    </flux:button>
                     @if ($activeOpname->status === 'DRAFT')
-                        <flux:button variant="primary"
+                        <flux:button variant="primary" class="w-full md:w-auto"
                             wire:confirm="Finalisasi stok opname akan mengubah seluruh stok sistem. Lanjutkan?"
                             wire:click="finalize">Finalisasi & Update Stok</flux:button>
                     @endif

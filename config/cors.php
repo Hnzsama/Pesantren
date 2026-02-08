@@ -15,7 +15,10 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie',
+        // Cooperative and Student API paths
+        'api/cooperative/*',
+    ],
 
     'allowed_methods' => ['*'],
 
@@ -24,7 +27,7 @@ return [
         'http://localhost:8080',
         'http://127.0.0.1:8000',
         'http://127.0.0.1:8080',
-        'https://facing-picnic-notifications-ethernet.trycloudflare.com',
+        'https://doing-bottom-built-movement.trycloudflare.com',
     ],
 
     'allowed_origins_patterns' => [

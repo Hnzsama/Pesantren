@@ -14,6 +14,19 @@ Route::get('/user', function (Request $request) {
     ]);
 })->middleware('auth:sanctum');
 
+/*
+|--------------------------------------------------------------------------
+| Cooperative API Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('cooperative')->group(function () {
+    Route::get('/midtrans/snap-token', [PaymentController::class, 'getSnapToken']);
+    Route::get('/transactions', [\App\Http\Controllers\Api\WalletTransactionController::class, 'index']);
+    Route::get('/transactions/{id}', [\App\Http\Controllers\Api\WalletTransactionController::class, 'show']);
+    Route::post('/transactions/{id}/cancel', [\App\Http\Controllers\Api\WalletTransactionController::class, 'cancel']);
+    Route::post('/transactions/{id}/pay', [PaymentController::class, 'pay']);
+});
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/midtrans/snap-token', [PaymentController::class, 'getSnapToken']);
     Route::get('/transactions', [\App\Http\Controllers\Api\WalletTransactionController::class, 'index']);
@@ -36,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/student-cards', [\App\Http\Controllers\Api\StudentCardController::class, 'index']);
     Route::get('/student-cards/{id}', [\App\Http\Controllers\Api\StudentCardController::class, 'show']);
     Route::get('/student-cards/number/{cardNumber}', [\App\Http\Controllers\Api\StudentCardController::class, 'getByCardNumber']);
+    Route::apiResource('sowan-schedules', \App\Http\Controllers\Api\SowanScheduleController::class);
 
     // News API
     Route::apiResource('news', \App\Http\Controllers\Api\NewsController::class)->names('api.news');
