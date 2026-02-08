@@ -236,6 +236,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                     @endif
                 </div>
 
+                <!-- Scrollable container for the stock opname items table -->
                 <div class="max-h-[500px] overflow-y-auto overflow-x-auto border rounded-xl custom-scrollbar">
                     <flux:table class="min-w-[600px] md:min-w-full">
                         <flux:table.columns>
