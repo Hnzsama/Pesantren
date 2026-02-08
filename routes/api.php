@@ -14,6 +14,19 @@ Route::get('/user', function (Request $request) {
     ]);
 })->middleware('auth:sanctum');
 
+/*
+|--------------------------------------------------------------------------
+| Cooperative API Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('cooperative')->group(function () {
+    Route::get('/midtrans/snap-token', [PaymentController::class, 'getSnapToken']);
+    Route::get('/transactions', [\App\Http\Controllers\Api\WalletTransactionController::class, 'index']);
+    Route::get('/transactions/{id}', [\App\Http\Controllers\Api\WalletTransactionController::class, 'show']);
+    Route::post('/transactions/{id}/cancel', [\App\Http\Controllers\Api\WalletTransactionController::class, 'cancel']);
+    Route::post('/transactions/{id}/pay', [PaymentController::class, 'pay']);
+});
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/midtrans/snap-token', [PaymentController::class, 'getSnapToken']);
     Route::get('/transactions', [\App\Http\Controllers\Api\WalletTransactionController::class, 'index']);
