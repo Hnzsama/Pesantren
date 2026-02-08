@@ -36,6 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/student-cards', [\App\Http\Controllers\Api\StudentCardController::class, 'index']);
     Route::get('/student-cards/{id}', [\App\Http\Controllers\Api\StudentCardController::class, 'show']);
     Route::get('/student-cards/number/{cardNumber}', [\App\Http\Controllers\Api\StudentCardController::class, 'getByCardNumber']);
+    Route::apiResource('sowan-schedules', \App\Http\Controllers\Api\SowanScheduleController::class);
 
     // News API
     Route::apiResource('news', \App\Http\Controllers\Api\NewsController::class)->names('api.news');
