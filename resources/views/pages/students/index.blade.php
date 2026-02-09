@@ -113,7 +113,7 @@ new #[Lazy] class extends Component {
     public function with(): array
     {
         $user = auth()->user();
-        $schoolId = $user->school_id;
+        $activeSchoolId = $user->hasRole('super_admin') ? session('active_school_id') : $user->school_id;
 
         // Base Query
         $query = Student::query()
@@ -137,19 +137,16 @@ new #[Lazy] class extends Component {
         // Data for filters
         $departments = Department::query()
             ->select('id', 'name')
-            ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
             ->get();
 
         $levels = Level::query()
             ->select('id', 'name', 'department_id')
             ->with('department:id,name')
-            ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
             ->when($this->departmentFilter, fn($q) => $q->where('department_id', $this->departmentFilter))
             ->get();
 
         $parents = User::role('wali_santri')
             ->select('users.id', 'users.name')
-            ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
             ->orderBy('name')
             ->get();
 
@@ -195,11 +192,9 @@ new #[Lazy] class extends Component {
             ];
 
             if (!$this->studentId) {
-                if (auth()->user()->hasRole('admin')) {
-                    $data['school_id'] = auth()->user()->school_id;
-                } else {
-                    $data['school_id'] = auth()->user()->school_id;
-                }
+                $data['school_id'] = auth()->user()->hasRole('super_admin')
+                    ? session('active_school_id')
+                    : auth()->user()->school_id;
             }
 
             if ($this->tempPhoto) {

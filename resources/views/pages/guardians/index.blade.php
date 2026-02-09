@@ -71,9 +71,7 @@ new #[Lazy] class extends Component {
             ->role('wali_santri')
             ->when($this->search, fn($q) => $q->where('name', 'like', '%' . $this->search . '%'));
 
-        if (auth()->user()->hasRole('admin')) {
-            $query->where('school_id', auth()->user()->school_id);
-        } else {
+        if (auth()->user()->hasRole('super_admin')) {
             $query->when($this->schoolFilter, fn($q) => $q->where('school_id', $this->schoolFilter));
         }
 
