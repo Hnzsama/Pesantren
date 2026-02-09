@@ -145,8 +145,7 @@ new #[Lazy] class extends Component {
             ->when($this->departmentFilter, fn($q) => $q->where('department_id', $this->departmentFilter))
             ->get();
 
-        $parents = User::role('wali_santri')
-            ->select('users.id', 'users.name')
+        $parents = User::whereHas('roles', fn($q) => $q->where('name', 'wali_santri'))
             ->when($activeSchoolId, fn($q) => $q->where('school_id', $activeSchoolId))
             ->orderBy('name')
             ->get();
