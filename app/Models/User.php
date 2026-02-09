@@ -103,4 +103,19 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(StudentCard::class, 'issued_by');
     }
+
+    /**
+     * Send the email verification notification.
+     *
+     * @return void
+     */
+    public function sendEmailVerificationNotification()
+    {
+        $otp = (string) mt_rand(100000, 999999);
+        $this->otp_code = $otp;
+        $this->otp_expires_at = now()->addMinutes(10);
+        $this->save();
+
+        $this->notify(new \App\Notifications\EmailOtpNotification($otp));
+    }
 }

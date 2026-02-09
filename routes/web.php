@@ -25,6 +25,8 @@ Route::get('dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
+    Route::post('/verify-otp', [\App\Http\Controllers\Api\Auth\OtpVerificationController::class, 'verify'])->name('verification.otp');
+
     // Dashboards - Statistics
     Route::livewire('super-admin/dashboard', 'pages::dashboard.super-admin-stat')->name('super-admin.dashboard');
     Route::livewire('admin/dashboard', 'pages::dashboard.admin-stat')->name('admin.dashboard');
