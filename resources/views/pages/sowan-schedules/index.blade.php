@@ -144,6 +144,20 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
         Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Jadwal sowan dihapus.');
     }
 
+    public function markAsConfirmed($id)
+    {
+        $schedule = SowanSchedule::findOrFail($id);
+        $schedule->update(['status' => 'confirmed']);
+        Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Jadwal sowan dikonfirmasi.');
+    }
+
+    public function markAsCompleted($id)
+    {
+        $schedule = SowanSchedule::findOrFail($id);
+        $schedule->update(['status' => 'completed']);
+        Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Jadwal sowan selesai.');
+    }
+
     public function getStatusColor($status)
     {
         return match ($status) {
@@ -221,15 +235,28 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                     </flux:table.cell>
 
                     <flux:table.cell>
-                        <flux:dropdown>
-                            <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" inset="top bottom" />
-                            <flux:menu>
-                                <flux:menu.item wire:click="edit('{{ $schedule->id }}')" icon="pencil">Edit</flux:menu.item>
-                                <flux:menu.separator />
-                                <flux:menu.item wire:click="delete('{{ $schedule->id }}')" icon="trash" variant="danger">
-                                    Hapus</flux:menu.item>
-                            </flux:menu>
-                        </flux:dropdown>
+                        <div class="flex items-center gap-2">
+                            @if($schedule->status === 'pending')
+                                <flux:button size="sm" variant="primary" wire:click="markAsConfirmed('{{ $schedule->id }}')">
+                                    Konfirmasi</flux:button>
+                            @endif
+                            @if($schedule->status === 'confirmed')
+                                <flux:button size="sm" variant="filled" wire:click="markAsCompleted('{{ $schedule->id }}')">
+                                    Selesai</flux:button>
+                            @endif
+
+                            <flux:dropdown>
+                                <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" inset="top bottom" />
+                                <flux:menu>
+                                    <flux:menu.item wire:click="edit('{{ $schedule->id }}')" icon="pencil">Edit
+                                    </flux:menu.item>
+                                    <flux:menu.separator />
+                                    <flux:menu.item wire:click="delete('{{ $schedule->id }}')" icon="trash"
+                                        variant="danger">
+                                        Hapus</flux:menu.item>
+                                </flux:menu>
+                            </flux:dropdown>
+                        </div>
                     </flux:table.cell>
                 </flux:table.row>
             @empty

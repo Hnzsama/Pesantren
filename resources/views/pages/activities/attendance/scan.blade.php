@@ -184,7 +184,7 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
     }
 }; ?>
 
-<div class="min-h-screen flex flex-col items-center justify-center p-6">
+<div class="min-h-screen flex flex-col items-center justify-center p-6 text-zinc-800 dark:text-zinc-100">
     <div class="w-full max-w-4xl space-y-8">
         {{-- Header --}}
         <div class="text-center space-y-2">
@@ -212,8 +212,14 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
                     };
                 @endphp
 
-                <flux:card
-                    class="text-center space-y-6 !border-{{ $statusColor }}-200 dark:!border-{{ $statusColor }}-800 !bg-{{ $statusColor }}-50 dark:!bg-{{ $statusColor }}-900/10">
+                <div class="rounded-xl border-2 p-8 text-center space-y-6
+                    @if($lastScan['status'] === 'success')
+                        bg-green-50 border-green-500 dark:bg-green-950 dark:border-green-500
+                    @elseif($lastScan['status'] === 'duplicate')
+                        bg-blue-50 border-blue-500 dark:bg-blue-950 dark:border-blue-500
+                    @else
+                        bg-red-50 border-red-500 dark:bg-red-950 dark:border-red-500
+                    @endif">
                     <div>
                         <flux:badge size="lg" color="{{ $statusColor }}" class="mb-4">
                             @if($lastScan['status'] === 'success')
@@ -225,17 +231,25 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
                             @endif
                         </flux:badge>
 
-                        <h2 class="text-5xl font-bold text-zinc-900 dark:text-white mb-2">
+                        <h2 class="text-5xl font-bold mb-2
+                            @if($lastScan['status'] === 'success') text-green-900 dark:text-green-100
+                            @elseif($lastScan['status'] === 'duplicate') text-blue-900 dark:text-blue-100
+                            @else text-red-900 dark:text-red-100
+                            @endif">
                             {{ $lastScan['student_name'] }}
                         </h2>
-                        <div class="text-zinc-500 dark:text-zinc-400 text-2xl">
+                        <div class="text-2xl
+                            @if($lastScan['status'] === 'success') text-green-800 dark:text-green-200
+                            @elseif($lastScan['status'] === 'duplicate') text-blue-800 dark:text-blue-200
+                            @else text-red-800 dark:text-red-200
+                            @endif">
                             {{ $lastScan['student_level'] }}
                         </div>
                     </div>
 
                     @if(!empty($lastScan['activities']))
-                        <div class="py-4 border-t border-zinc-200 dark:border-zinc-700">
-                            <div class="text-sm text-zinc-500 mb-2">Kegiatan Tercatat</div>
+                        <div class="py-4 border-t border-green-200 dark:border-green-600">
+                            <div class="text-sm text-green-800 dark:text-green-200 mb-2 font-medium">Kegiatan Tercatat</div>
                             <div class="flex flex-wrap justify-center gap-2">
                                 @foreach($lastScan['activities'] as $activity)
                                     <flux:badge color="green" icon="check">{{ $activity }}</flux:badge>
@@ -245,8 +259,8 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
                     @endif
 
                     @if(!empty($lastScan['already_recorded']))
-                        <div class="py-4 border-t border-zinc-200 dark:border-zinc-700">
-                            <div class="text-sm text-zinc-500 mb-2">Sebelumnya Tercatat</div>
+                        <div class="py-4 border-t border-zinc-200 dark:border-zinc-600">
+                            <div class="text-sm text-zinc-700 dark:text-zinc-300 mb-2 font-medium">Sebelumnya Tercatat</div>
                             <div class="flex flex-wrap justify-center gap-2">
                                 @foreach($lastScan['already_recorded'] as $activity)
                                     <flux:badge color="blue" icon="information-circle">{{ $activity }}</flux:badge>
@@ -254,15 +268,15 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
                             </div>
                         </div>
                     @endif
-                </flux:card>
+                </div>
             @else
-                <flux:card class="text-center py-12 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700">
+                <div class="rounded-xl border-2 p-8 text-center bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-600">
                     <div class="mb-4">
                         <flux:icon.qr-code class="w-24 h-24 mx-auto text-zinc-300 dark:text-zinc-600" />
                     </div>
                     <h3 class="text-3xl font-medium text-zinc-900 dark:text-white">Siap Memindai</h3>
                     <p class="text-zinc-500 dark:text-zinc-400 mt-2">Silakan scan kartu santri pada alat scanner</p>
-                </flux:card>
+                </div>
             @endif
         </div>
 
