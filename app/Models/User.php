@@ -35,6 +35,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'fcm_token',
         'school_id',
+        'otp_code',
+        'otp_expires_at',
     ];
 
     /**
