@@ -14,4 +14,9 @@ class SowanSchedule extends Model
     protected $casts = [
         'request_date' => 'datetime',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(\App\Models\User::class);
+    }
 }

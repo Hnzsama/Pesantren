@@ -69,7 +69,10 @@ class SowanScheduleController extends Controller
             ], 422);
         }
 
-        $schedule = SowanSchedule::create($validator->validated());
+        $data = $validator->validated();
+        $data['user_id'] = $request->user()->id;
+
+        $schedule = SowanSchedule::create($data);
 
         return response()->json([
             'success' => true,

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Activity;
 use App\Models\ActivityAttendance;
 use App\Models\Student;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ActivityController extends Controller
@@ -23,6 +24,10 @@ class ActivityController extends Controller
         ]);
 
         $user = $request->user();
+
+        // Normalize date to Y-m-d in app timezone (Asia/Jakarta)
+        // Agar konsisten antara web dan mobile
+        $date = Carbon::parse($request->date, config('app.timezone'))->format('Y-m-d');
 
         // 1. Validate Student Ownership
         $student = Student::where('id', $request->student_id)
@@ -49,9 +54,10 @@ class ActivityController extends Controller
         $activities = $activitiesQuery->get();
 
         // 3. Fetch Attendance Records for this Student & Date
+        // Gunakan where('date', $date) untuk kolom date - lebih reliable
         $attendances = ActivityAttendance::query()
             ->where('student_id', $student->id)
-            ->whereDate('date', $request->date)
+            ->where('date', $date)
             ->whereIn('activity_id', $activities->pluck('id'))
             ->get()
             ->keyBy('activity_id');
