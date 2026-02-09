@@ -8,6 +8,7 @@ use Livewire\Attributes\Url;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Notifications\AdminCreatedNotification;
 use Flux\Flux;
 
 new #[Lazy] class extends Component {
@@ -48,6 +49,7 @@ new #[Lazy] class extends Component {
 
     public $schoolId = null;
     public $schoolIdToDelete = null;
+    public $schoolIdToResend = null;
 
     // Admin Credentials (for new school)
     public $admin_name = '';
@@ -103,6 +105,9 @@ new #[Lazy] class extends Component {
                 ]);
                 $user->assignRole('admin');
 
+                // Send email notification
+                $user->notify(new AdminCreatedNotification($this->admin_password));
+
                 Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Data sekolah dan admin berhasil ditambahkan.');
             }
         });
@@ -126,6 +131,29 @@ new #[Lazy] class extends Component {
     public function confirmDelete($id)
     {
         $this->schoolIdToDelete = $id;
+        $this->modal('delete-school-modal')->show();
+    }
+
+    public function confirmResendAdminAccess($schoolId)
+    {
+        $this->schoolIdToResend = $schoolId;
+        $this->modal('resend-admin-access-modal')->show();
+    }
+
+    public function resendAdminAccess()
+    {
+        $schoolId = $this->schoolIdToResend;
+        $admin = User::where('school_id', $schoolId)->role('admin')->first();
+        if ($admin) {
+            $newPassword = Str::random(10);
+            $admin->update(['password' => bcrypt($newPassword)]);
+            $admin->notify(new AdminCreatedNotification($newPassword));
+            Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Email akses admin baru telah dikirimkan ke ' . $admin->email);
+        } else {
+            Flux::toast(variant: 'error', heading: 'Gagal', text: 'Admin tidak ditemukan untuk sekolah ini.');
+        }
+        $this->reset('schoolIdToResend');
+        $this->modal('resend-admin-access-modal')->close();
     }
 
     public function destroy()
@@ -234,6 +262,11 @@ new #[Lazy] class extends Component {
                                     </flux:menu.item>
                                 </flux:modal.trigger>
 
+                                <flux:menu.item wire:click="confirmResendAdminAccess('{{ $school->id }}')"
+                                    icon="paper-airplane">
+                                    Kirim Ulang Akses
+                                </flux:menu.item>
+
                                 <flux:modal.trigger name="delete-school-modal">
                                     <flux:menu.item wire:click="confirmDelete('{{ $school->id }}')" icon="trash"
                                         variant="danger">Hapus</flux:menu.item>
@@ -316,6 +349,9 @@ new #[Lazy] class extends Component {
                 <flux:field>
                     <flux:label badge="Required">Email Admin</flux:label>
                     <flux:input wire:model="admin_email" type="email" placeholder="admin@sekolah.com" />
+                    <flux:subheading size="sm" class="mt-1">
+                        {{ __('Penting: Gunakan email asli. Password sementara akan dikirimkan ke email ini.') }}
+                    </flux:subheading>
                     <flux:error name="admin_email" />
                 </flux:field>
 
@@ -347,6 +383,25 @@ new #[Lazy] class extends Component {
                     <flux:button variant="ghost">Batal</flux:button>
                 </flux:modal.close>
                 <flux:button wire:click="destroy" variant="danger">Hapus</flux:button>
+            </div>
+        </div>
+    </flux:modal>
+
+    <flux:modal name="resend-admin-access-modal" class="min-w-[22rem]">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg">Kirim Ulang Akses Admin?</flux:heading>
+                <flux:text class="mt-2 text-wrap">
+                    Apakah Anda yakin ingin mengatur ulang password dan mengirimkan akses baru ke admin sekolah ini?
+                </flux:text>
+            </div>
+            <div class="flex gap-2">
+                <flux:spacer />
+                <flux:modal.close>
+                    <flux:button variant="ghost">Batal</flux:button>
+                </flux:modal.close>
+                <flux:button wire:click="resendAdminAccess" variant="primary" icon="paper-airplane">Kirim Ulang
+                </flux:button>
             </div>
         </div>
     </flux:modal>
