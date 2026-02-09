@@ -11,7 +11,7 @@ class School extends Model
 {
     use HasFactory, HasUlids;
 
-    protected $fillable = ['name', 'slug', 'address', 'phone', 'email', 'website', 'theme_color', 'logo_path'];
+    protected $fillable = ['name', 'slug', 'address', 'phone', 'email', 'website', 'theme_color', 'logo_path', 'profile_photo_path'];
 
     public function users(): HasMany
     {
