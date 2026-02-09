@@ -241,6 +241,15 @@ new #[Lazy] class extends Component {
     public function create()
     {
         $this->reset(['studentId', 'nis', 'full_name', 'level_id', 'parent_user_id', 'gender', 'status', 'tempPhoto', 'current_photo_url']);
+
+        // Auto-generate numeric NIS
+        // Format: Ymd (8) + random (4) = 12 digits
+        do {
+            $generatedNis = date('Ymd') . mt_rand(1000, 9999);
+        } while (Student::where('nis', $generatedNis)->where('school_id', auth()->user()->school_id)->exists());
+
+        $this->nis = $generatedNis;
+
         $this->resetValidation();
         $this->modal('student-modal')->show();
     }
@@ -748,7 +757,8 @@ new #[Lazy] class extends Component {
 
             <flux:field>
                 <flux:label badge="Required">NIS</flux:label>
-                <flux:input wire:model="nis" placeholder="Nomor Induk Santri" />
+                <flux:input wire:model="nis" placeholder="Nomor Induk Santri" :readonly="!$studentId" />
+                <flux:description>NIS di-generate otomatis oleh sistem untuk santri baru.</flux:description>
                 <flux:error name="nis" />
             </flux:field>
 
