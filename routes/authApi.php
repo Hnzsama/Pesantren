@@ -14,11 +14,13 @@ Route::post('/login', [AuthenticatedSessionController::class, 'store'])
     ->middleware('guest')
     ->name('api.login');
 
-Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
+use App\Http\Controllers\Api\Auth\PasswordResetOtpController;
+
+Route::post('/forgot-password', [PasswordResetOtpController::class, 'store'])
     ->middleware('guest')
     ->name('api.password.email');
 
-Route::post('/reset-password', [NewPasswordController::class, 'store'])
+Route::post('/reset-password', [PasswordResetOtpController::class, 'reset'])
     ->middleware('guest')
     ->name('api.password.store');
 

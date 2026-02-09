@@ -118,4 +118,20 @@ class User extends Authenticatable implements MustVerifyEmail
 
         $this->notify(new \App\Notifications\EmailOtpNotification($otp));
     }
+
+    /**
+     * Send the password reset notification.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $otp = (string) mt_rand(100000, 999999);
+        $this->otp_code = $otp;
+        $this->otp_expires_at = now()->addMinutes(10);
+        $this->save();
+
+        $this->notify(new \App\Notifications\PasswordResetOtpNotification($otp));
+    }
 }

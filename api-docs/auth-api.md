@@ -4,11 +4,11 @@ Dokumentasi API untuk verifikasi email dan lupa password.
 
 ## 1. Lupa Password (Forgot Password)
 
-Digunakan untuk meminta link reset password yang akan dikirimkan ke email pengguna.
+Digunakan untuk meminta kode OTP reset password yang akan dikirimkan ke email pengguna.
 
 - **URL:** `/api/forgot-password`
 - **Method:** `POST`
-- **Auth:** `Guest` (Optional)
+- **Auth:** `Guest`
 - **Request Body:**
 
   ```json
@@ -22,26 +22,24 @@ Digunakan untuk meminta link reset password yang akan dikirimkan ke email penggu
 
       ```json
       {
-          "status": "We have emailed your password reset link."
+          "status": "otp-sent",
+          "message": "Kode OTP reset password telah dikirim ke email Anda."
       }
       ```
 
-  - **422 Unprocessable Entity** (Email tidak ditemukan atau error validasi)
+  - **404 Not Found** (Email tidak terdaftar)
 
       ```json
       {
-          "message": "The email field is required.",
-          "errors": {
-              "email": ["We can't find a user with that email address."]
-          }
+          "message": "Email tidak ditemukan."
       }
       ```
 
 ---
 
-## 2. Reset Password
+## 2. Reset Password (OTP)
 
-Digunakan untuk mengganti password setelah menerima token dari email.
+Digunakan untuk mengganti password menggunakan kode OTP yang diterima melalui email.
 
 - **URL:** `/api/reset-password`
 - **Method:** `POST`
@@ -50,8 +48,8 @@ Digunakan untuk mengganti password setelah menerima token dari email.
 
   ```json
   {
-      "token": "token-dari-email",
       "email": "user@example.com",
+      "otp_code": "123456",
       "password": "passwordBaru123",
       "password_confirmation": "passwordBaru123"
   }
@@ -62,18 +60,15 @@ Digunakan untuk mengganti password setelah menerima token dari email.
 
       ```json
       {
-          "status": "Your password has been reset."
+          "message": "Password berhasil diubah. Silakan login kembali."
       }
       ```
 
-  - **422 Unprocessable Entity** (Token expired atau password tidak cocok)
+  - **422 Unprocessable Entity** (OTP salah, expired, atau password tidak valid)
 
       ```json
       {
-          "message": "The password field confirmation does not match.",
-          "errors": {
-              "email": ["This password reset token is invalid."]
-          }
+          "message": "Kode OTP tidak valid."
       }
       ```
 
