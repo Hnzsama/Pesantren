@@ -22,4 +22,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ),
         )
         ->name('two-factor.show');
+
+    Route::livewire('settings/pesantren', 'pages::settings.pesantren')
+        ->middleware(['role:admin'])
+        ->name('settings.pesantren');
 });
