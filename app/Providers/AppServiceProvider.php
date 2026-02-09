@@ -31,6 +31,15 @@ class AppServiceProvider extends ServiceProvider
         });
 
         \App\Models\AcademicYear::observe(\App\Observers\AcademicYearObserver::class);
+        \App\Models\News::observe(\App\Observers\NewsObserver::class);
+        \App\Models\Bill::observe(\App\Observers\BillObserver::class);
+        \App\Models\Achievement::observe(\App\Observers\AchievementObserver::class);
+        \App\Models\StudentPermission::observe(\App\Observers\StudentPermissionObserver::class);
+        \App\Models\Attendance::observe(\App\Observers\AttendanceObserver::class);
+        \App\Models\ActivityAttendance::observe(\App\Observers\ActivityAttendanceObserver::class);
+        \App\Models\VideoLecture::observe(\App\Observers\VideoLectureObserver::class);
+        \App\Models\StudentReport::observe(\App\Observers\StudentReportObserver::class);
+        \App\Models\SowanSchedule::observe(\App\Observers\SowanScheduleObserver::class);
 
         if (app()->environment('local')) {
             URL::forceScheme('https');

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\FeedbackController;
 use App\Http\Controllers\PaymentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -49,7 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/student-cards', [\App\Http\Controllers\Api\StudentCardController::class, 'index']);
     Route::get('/student-cards/{id}', [\App\Http\Controllers\Api\StudentCardController::class, 'show']);
     Route::get('/student-cards/number/{cardNumber}', [\App\Http\Controllers\Api\StudentCardController::class, 'getByCardNumber']);
-    Route::apiResource('sowan-schedules', \App\Http\Controllers\Api\SowanScheduleController::class);
+    Route::apiResource('sowan-schedules', \App\Http\Controllers\Api\SowanScheduleController::class)->names('api.sowan-schedules');
 
     // News API
     Route::apiResource('news', \App\Http\Controllers\Api\NewsController::class)->names('api.news');
@@ -57,6 +58,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // Reports API
     Route::get('reports/filters', [\App\Http\Controllers\Api\ReportController::class, 'getFilters']);
     Route::get('reports', [\App\Http\Controllers\Api\ReportController::class, 'index']);
+
+    // FCM API
+    Route::post('/user/update-fcm-token', [\App\Http\Controllers\Api\FcmController::class, 'updateToken']);
+    Route::post('/test-notification', [\App\Http\Controllers\Api\FcmController::class, 'testNotification']);
+
+    Route::get('feedback', [FeedbackController::class, 'index']);
+    Route::post('feedback', [FeedbackController::class, 'store']);
 });
 
 Route::post('/midtrans/callback', [PaymentController::class, 'callback']);
