@@ -275,6 +275,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
     {
         array_unshift($this->scannedRecords, [
             'card_number' => $cardNumber,
+            'nis' => $student?->nis ?? $cardNumber,
             'student_name' => $student ? $student->full_name : 'Unknown',
             'status' => $status,
             'error_message' => $errorMessage,

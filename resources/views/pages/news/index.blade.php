@@ -47,6 +47,8 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
 
     public $selectedNews = null;
 
+    public $detailContent = '';
+
     public function mount()
     {
         $this->setDefaultTargetRole();
@@ -69,7 +71,6 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
 
         return [
             'newsList' => News::query()
-                ->when($user->hasRole('admin'), fn($q) => $q->where('school_id', $schoolId))
                 ->latest()
                 ->paginate(10),
         ];
@@ -87,7 +88,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
             ]);
 
             $user = auth()->user();
-            $schoolId = $user->hasRole('admin') ? $user->school_id : null;
+            $schoolId = $user->school_id ?? (session()->has('active_school_id') ? session('active_school_id') : null);
 
             $storedImages = [];
             if ($this->images) {
@@ -180,6 +181,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
     public function viewDetail($id)
     {
         $this->selectedNews = News::with('author')->findOrFail($id);
+        $this->detailContent = $this->selectedNews->content ?? '';
         Flux::modal('news-detail')->show();
     }
 }; ?>
@@ -237,7 +239,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                     </h3>
 
                     <p class="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-3 mb-4">
-                        {{ $news->content }}
+                        {{ Str::limit(strip_tags($news->content), 180) }}
                     </p>
 
                     <div class="mt-auto flex flex-col gap-4">
@@ -283,9 +285,11 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
 
                 <flux:separator />
 
-                <div class="prose prose-zinc dark:prose-invert max-w-none">
-                    {!! nl2br(e($selectedNews->content)) !!}
-                </div>
+                <flux:field wire:key="detail-editor-{{ $selectedNews->id }}">
+                    <flux:editor wire:model="detailContent" label="Isi Berita" disabled>
+                        <flux:editor.content />
+                    </flux:editor>
+                </flux:field>
 
                 @if(!empty($selectedNews->images))
                     <div class="space-y-4">

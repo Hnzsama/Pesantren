@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class News extends Model
 {
-    use HasFactory, HasUlids;
+    use HasFactory, HasUlids, \App\Traits\HasSchoolScope;
 
     protected $fillable = [
         'school_id',

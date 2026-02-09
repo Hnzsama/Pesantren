@@ -155,15 +155,23 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
                 @php
                     $statusColor = match ($lastScan['status']) {
                         'success' => 'green',
-                        'duplicate' => 'yellow',
-                        'expired' => 'orange',
+                        'duplicate' => 'blue',
+                        'expired' => 'amber',
                         'error' => 'red',
                         default => 'zinc'
                     };
                 @endphp
 
-                <flux:card
-                    class="text-center space-y-6 !border-{{ $statusColor }}-500 dark:!border-{{ $statusColor }}-500 !bg-{{ $statusColor }}-50 dark:!bg-{{ $statusColor }}-950">
+                <div class="rounded-xl border-2 p-8 text-center space-y-6
+                    @if($lastScan['status'] === 'success')
+                        bg-green-50 border-green-500 dark:bg-green-950 dark:border-green-500
+                    @elseif($lastScan['status'] === 'duplicate')
+                        bg-blue-50 border-blue-500 dark:bg-blue-950 dark:border-blue-500
+                    @elseif($lastScan['status'] === 'expired')
+                        bg-amber-50 border-amber-500 dark:bg-amber-950 dark:border-amber-500
+                    @else
+                        bg-red-50 border-red-500 dark:bg-red-950 dark:border-red-500
+                    @endif">
                     <div>
                         <flux:badge size="lg" color="{{ $statusColor }}" class="mb-4">
                             @if($lastScan['status'] === 'success')
@@ -175,41 +183,41 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
                             @endif
                         </flux:badge>
 
-                        <h2 class="text-5xl font-bold mb-2 
-                                        @if($lastScan['status'] === 'success') text-green-900 dark:text-green-100
-                                        @elseif($lastScan['status'] === 'duplicate') text-yellow-900 dark:text-yellow-100
-                                        @elseif($lastScan['status'] === 'expired') text-orange-900 dark:text-orange-100
-                                        @else text-red-900 dark:text-red-100
-                                        @endif">
+                        <h2 class="text-5xl font-bold mb-2
+                            @if($lastScan['status'] === 'success') text-green-900 dark:text-green-100
+                            @elseif($lastScan['status'] === 'duplicate') text-blue-900 dark:text-blue-100
+                            @elseif($lastScan['status'] === 'expired') text-amber-900 dark:text-amber-100
+                            @else text-red-900 dark:text-red-100
+                            @endif">
                             {{ $lastScan['student_name'] }}
                         </h2>
-                        <div class="text-2xl 
-                                        @if($lastScan['status'] === 'success') text-green-700 dark:text-green-300
-                                        @elseif($lastScan['status'] === 'duplicate') text-yellow-700 dark:text-yellow-300
-                                        @elseif($lastScan['status'] === 'expired') text-orange-700 dark:text-orange-300
-                                        @else text-red-700 dark:text-red-300
-                                        @endif">
+                        <div class="text-2xl
+                            @if($lastScan['status'] === 'success') text-green-800 dark:text-green-200
+                            @elseif($lastScan['status'] === 'duplicate') text-blue-800 dark:text-blue-200
+                            @elseif($lastScan['status'] === 'expired') text-amber-800 dark:text-amber-200
+                            @else text-red-800 dark:text-red-200
+                            @endif">
                             {{ $lastScan['student_level'] }}
                         </div>
                     </div>
 
                     @if($lastScan['status'] === 'success')
-                        <div class="py-4 border-t border-green-200 dark:border-green-700">
-                            <div class="text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
+                        <div class="py-4 border-t border-green-200 dark:border-green-600">
+                            <div class="text-green-800 dark:text-green-200 flex items-center justify-center gap-2 font-medium">
                                 <flux:icon.check class="w-6 h-6" />
                                 <span>Tercatat pada {{ $lastScan['timestamp'] }}</span>
                             </div>
                         </div>
                     @endif
-                </flux:card>
+                </div>
             @else
-                <flux:card class="text-center py-12 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700">
+                <div class="rounded-xl border-2 p-8 text-center bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-600">
                     <div class="mb-4">
                         <flux:icon.qr-code class="w-24 h-24 mx-auto text-zinc-300 dark:text-zinc-600" />
                     </div>
                     <h3 class="text-3xl font-medium text-zinc-900 dark:text-white">Siap Memindai</h3>
                     <p class="text-zinc-500 dark:text-zinc-400 mt-2">Silakan scan kartu santri untuk agenda ini</p>
-                </flux:card>
+                </div>
             @endif
         </div>
 

@@ -2,6 +2,7 @@
 
 use App\Models\School;
 use App\Models\User;
+use App\Notifications\AdminCreatedNotification;
 use Flux\Flux;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -11,8 +12,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Spatie\Permission\Models\Role;
 
-new #[Lazy] class extends Component
-{
+new #[Lazy] class extends Component {
     use WithPagination;
 
     #[Url]
@@ -40,6 +40,8 @@ new #[Lazy] class extends Component
 
     public $userIdToDelete = null;
 
+    public $userIdToResend = null;
+
     public function with(): array
     {
         $query = User::query()
@@ -47,13 +49,13 @@ new #[Lazy] class extends Component
             ->whereHas('roles', function ($q) {
                 $q->whereIn('name', ['admin', 'admin_koperasi']);
             })
-            ->when($this->search, fn ($q) => $q->where('name', 'like', '%'.$this->search.'%'))
-            ->when($this->roleFilter, fn ($q) => $q->whereHas('roles', fn ($r) => $r->where('name', $this->roleFilter)));
+            ->when($this->search, fn($q) => $q->where('name', 'like', '%' . $this->search . '%'))
+            ->when($this->roleFilter, fn($q) => $q->whereHas('roles', fn($r) => $r->where('name', $this->roleFilter)));
 
         if (auth()->user()->hasRole('admin')) {
             $query->where('school_id', auth()->user()->school_id);
         } else {
-            $query->when($this->schoolFilter, fn ($q) => $q->where('school_id', $this->schoolFilter));
+            $query->when($this->schoolFilter, fn($q) => $q->where('school_id', $this->schoolFilter));
         }
 
         return [
@@ -95,6 +97,12 @@ new #[Lazy] class extends Component
             } else {
                 $user = User::create($data);
                 $user->assignRole($this->role);
+
+                // Send email notification for administrative roles
+                if (in_array($this->role, ['admin', 'admin_koperasi'])) {
+                    $user->notify(new AdminCreatedNotification($this->password));
+                }
+
                 Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Data pengguna berhasil ditambahkan.');
             }
         });
@@ -120,6 +128,29 @@ new #[Lazy] class extends Component
     {
         $this->userIdToDelete = $id;
         $this->modal('delete-user-modal')->show();
+    }
+
+    public function confirmResendAccess($id)
+    {
+        $this->userIdToResend = $id;
+        $this->modal('resend-access-modal')->show();
+    }
+
+    public function resendAccess()
+    {
+        $user = User::find($this->userIdToResend);
+        if ($user) {
+            $newPassword = Str::random(10);
+            $user->update([
+                'password' => bcrypt($newPassword),
+            ]);
+
+            $user->notify(new AdminCreatedNotification($newPassword));
+
+            Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Email akses baru telah dikirimkan ke ' . $user->email);
+        }
+        $this->reset('userIdToResend');
+        $this->modal('resend-access-modal')->close();
     }
 
     public function destroy()
@@ -242,6 +273,11 @@ new #[Lazy] class extends Component
                         <div class="flex gap-2">
                             <flux:button variant="ghost" size="sm" icon="pencil" wire:click="edit('{{ $user->id }}')">Edit
                             </flux:button>
+                            @if(in_array($user->roles->first()?->name, ['admin', 'admin_koperasi']))
+                                <flux:button variant="ghost" size="sm" icon="paper-airplane"
+                                    wire:click="confirmResendAccess('{{ $user->id }}')">Akses
+                                </flux:button>
+                            @endif
                             <flux:button variant="ghost" size="sm" icon="trash"
                                 wire:click="confirmDelete('{{ $user->id }}')">Hapus</flux:button>
                         </div>
@@ -277,6 +313,9 @@ new #[Lazy] class extends Component
             <flux:input wire:model="name" label="Nama" placeholder="Masukkan nama lengkap" />
 
             <flux:input wire:model="email" type="email" label="Email" placeholder="email@example.com" />
+            <flux:subheading size="sm" class="mt-1">
+                {{ __('Penting: Gunakan email asli. Password sementara akan dikirimkan ke email ini.') }}
+            </flux:subheading>
 
             <flux:input wire:model="phone_number" label="Nomor Telepon" placeholder="08123456789" />
 
@@ -323,6 +362,24 @@ new #[Lazy] class extends Component
                     <flux:button variant="ghost">Batal</flux:button>
                 </flux:modal.close>
                 <flux:button wire:click="destroy" variant="danger">Hapus</flux:button>
+            </div>
+        </div>
+    </flux:modal>
+
+    <flux:modal name="resend-access-modal" class="min-w-[22rem]">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg">Kirim Ulang Akses?</flux:heading>
+                <flux:text class="mt-2">
+                    Apakah Anda yakin ingin mengatur ulang password dan mengirimkan akses baru ke pengguna ini?
+                </flux:text>
+            </div>
+            <div class="flex gap-2">
+                <flux:spacer />
+                <flux:modal.close>
+                    <flux:button variant="ghost">Batal</flux:button>
+                </flux:modal.close>
+                <flux:button wire:click="resendAccess" variant="primary" icon="paper-airplane">Kirim Ulang</flux:button>
             </div>
         </div>
     </flux:modal>
