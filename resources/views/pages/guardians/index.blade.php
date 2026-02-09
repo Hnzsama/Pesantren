@@ -8,6 +8,7 @@ use Livewire\Attributes\Url;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Notifications\GuardianCreatedNotification;
 use Flux\Flux;
 
 new #[Lazy] class extends Component {
@@ -61,6 +62,7 @@ new #[Lazy] class extends Component {
 
     public $userId = null;
     public $userIdToDelete = null;
+    public $userIdToResend = null;
 
     public function with(): array
     {
@@ -111,6 +113,10 @@ new #[Lazy] class extends Component {
             } else {
                 $user = User::create($data);
                 $user->assignRole('wali_santri');
+
+                // Send email notification with credentials
+                $user->notify(new GuardianCreatedNotification($this->password));
+
                 Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Data wali santri berhasil ditambahkan.');
             }
         });
@@ -148,6 +154,30 @@ new #[Lazy] class extends Component {
         });
         $this->reset('userIdToDelete');
         $this->modal('delete-guardian-modal')->close();
+    }
+
+    public function confirmResendAccess($id)
+    {
+        $this->userIdToResend = $id;
+        $this->modal('resend-access-modal')->show();
+    }
+
+    public function resendAccess()
+    {
+        $user = User::findOrFail($this->userIdToResend);
+
+        // Reset password to a random 8-character string
+        $tempPassword = Str::random(8);
+        $user->update([
+            'password' => bcrypt($tempPassword)
+        ]);
+
+        // Notify user
+        $user->notify(new GuardianCreatedNotification($tempPassword));
+
+        Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Akses baru telah dikirim ke email ' . $user->email);
+        $this->modal('resend-access-modal')->close();
+        $this->reset('userIdToResend');
     }
 
     public function create()
@@ -222,6 +252,11 @@ new #[Lazy] class extends Component {
                             <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" inset="top bottom" />
 
                             <flux:menu>
+                                <flux:menu.item wire:click="confirmResendAccess('{{ $user->id }}')" icon="key">Akses
+                                </flux:menu.item>
+
+                                <flux:menu.separator />
+
                                 <flux:modal.trigger name="guardian-modal">
                                     <flux:menu.item wire:click="edit('{{ $user->id }}')" icon="pencil-square">Edit
                                     </flux:menu.item>
@@ -270,6 +305,7 @@ new #[Lazy] class extends Component {
             <flux:field>
                 <flux:label badge="Required">Email</flux:label>
                 <flux:input wire:model="email" type="email" placeholder="ahmad@gmail.com" />
+                <flux:description>Gunakan email aktif wali santri untuk pengiriman akses login.</flux:description>
                 <flux:error name="email" />
             </flux:field>
 
@@ -323,6 +359,26 @@ new #[Lazy] class extends Component {
                     <flux:button variant="ghost">Batal</flux:button>
                 </flux:modal.close>
                 <flux:button wire:click="destroy" variant="danger">Hapus</flux:button>
+            </div>
+        </div>
+    </flux:modal>
+
+    <flux:modal name="resend-access-modal" class="min-w-[22rem]">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg">Kirim Ulang Akses?</flux:heading>
+                <flux:text class="mt-2">
+                    Sistem akan membuatkan password baru secara acak dan mengirimkannya ke email wali santri yang
+                    bersangkutan.
+                </flux:text>
+            </div>
+
+            <div class="flex gap-2">
+                <flux:spacer />
+                <flux:modal.close>
+                    <flux:button variant="ghost">Batal</flux:button>
+                </flux:modal.close>
+                <flux:button wire:click="resendAccess" variant="primary">Kirim Akses Baru</flux:button>
             </div>
         </div>
     </flux:modal>
