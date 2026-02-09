@@ -73,6 +73,8 @@ new #[Lazy] class extends Component {
 
         if (auth()->user()->hasRole('super_admin')) {
             $query->when($this->schoolFilter, fn($q) => $q->where('school_id', $this->schoolFilter));
+        } else {
+            $query->where('school_id', auth()->user()->school_id);
         }
 
         return [

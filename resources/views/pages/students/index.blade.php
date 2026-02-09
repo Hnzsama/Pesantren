@@ -147,6 +147,7 @@ new #[Lazy] class extends Component {
 
         $parents = User::role('wali_santri')
             ->select('users.id', 'users.name')
+            ->when($activeSchoolId, fn($q) => $q->where('school_id', $activeSchoolId))
             ->orderBy('name')
             ->get();
 
