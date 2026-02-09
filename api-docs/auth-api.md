@@ -77,40 +77,55 @@ Digunakan untuk mengganti password setelah menerima token dari email.
       }
       ```
 
----
+## 3. Verifikasi Email (OTP)
 
-## 3. Verifikasi Email (Direct Link)
+Endpoint ini digunakan untuk memverifikasi alamat email menggunakan kode OTP 6-digit.
 
-Endpoint ini biasanya dipanggil melalui link yang dikirimkan ke email. Merupakan Signed URL.
+### a. Verifikasi OTP
 
-- **URL:** `/api/verify-email/{id}/{hash}`
-- **Method:** `GET`
-- **Auth:** `Authenticated`
-- **Parameters:** (Automatis dari link email)
-  - `id`: User ID
-  - `hash`: SHA-1 hash dari email
-- **Query Parameters:**
-  - `expires`: Timestamp kedaluwarsa
-  - `signature`: Signature hash untuk keamanan
-- **Responses:**
-  - **302 Redirect** (Redirect ke dashboard dengan query `?verified=1`)
-
----
-
-## 4. Kirim Ulang Verifikasi (Resend Notification)
-
-Digunakan jika pengguna belum menerima email verifikasi atau link sudah kedaluwarsa.
-
-- **URL:** `/api/email/verification-notification`
+- **URL:** `/api/email/verify-otp`
 - **Method:** `POST`
-- **Auth:** `Authenticated`
+- **Auth:** `Authenticated (Sanctum)`
+- **Request Body:**
+
+  ```json
+  {
+      "otp_code": "123456"
+  }
+  ```
+
 - **Responses:**
   - **200 OK**
 
-      ```json
-      {
-          "status": "verification-link-sent"
-      }
-      ```
+    ```json
+    {
+        "message": "Email berhasil diverifikasi."
+    }
+    ```
 
-  - **302 Redirect** (Jika email sudah terverifikasi, akan diredirect ke dashboard)
+  - **422 Unprocessable Entity** (Kode salah atau expired)
+
+    ```json
+    {
+        "message": "Kode OTP tidak valid."
+    }
+    ```
+
+---
+
+## 4. Kirim Ulang OTP (Resend Notification)
+
+Digunakan untuk meminta kode OTP baru.
+
+- **URL:** `/api/email/verification-notification`
+- **Method:** `POST`
+- **Auth:** `Authenticated (Sanctum)`
+- **Responses:**
+  - **200 OK**
+
+    ```json
+    {
+        "status": "otp-sent",
+        "message": "Kode OTP baru telah dikirim ke email Anda."
+    }
+    ```
