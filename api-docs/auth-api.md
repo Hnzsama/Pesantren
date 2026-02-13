@@ -4,11 +4,11 @@ Dokumentasi API untuk verifikasi email dan lupa password.
 
 ## 1. Lupa Password (Forgot Password)
 
-Digunakan untuk meminta link reset password yang akan dikirimkan ke email pengguna.
+Digunakan untuk meminta kode OTP reset password yang akan dikirimkan ke email pengguna.
 
 - **URL:** `/api/forgot-password`
 - **Method:** `POST`
-- **Auth:** `Guest` (Optional)
+- **Auth:** `Guest`
 - **Request Body:**
 
   ```json
@@ -22,26 +22,24 @@ Digunakan untuk meminta link reset password yang akan dikirimkan ke email penggu
 
       ```json
       {
-          "status": "We have emailed your password reset link."
+          "status": "otp-sent",
+          "message": "Kode OTP reset password telah dikirim ke email Anda."
       }
       ```
 
-  - **422 Unprocessable Entity** (Email tidak ditemukan atau error validasi)
+  - **404 Not Found** (Email tidak terdaftar)
 
       ```json
       {
-          "message": "The email field is required.",
-          "errors": {
-              "email": ["We can't find a user with that email address."]
-          }
+          "message": "Email tidak ditemukan."
       }
       ```
 
 ---
 
-## 2. Reset Password
+## 2. Reset Password (OTP)
 
-Digunakan untuk mengganti password setelah menerima token dari email.
+Digunakan untuk mengganti password menggunakan kode OTP yang diterima melalui email.
 
 - **URL:** `/api/reset-password`
 - **Method:** `POST`
@@ -50,8 +48,8 @@ Digunakan untuk mengganti password setelah menerima token dari email.
 
   ```json
   {
-      "token": "token-dari-email",
       "email": "user@example.com",
+      "otp_code": "123456",
       "password": "passwordBaru123",
       "password_confirmation": "passwordBaru123"
   }
@@ -62,55 +60,67 @@ Digunakan untuk mengganti password setelah menerima token dari email.
 
       ```json
       {
-          "status": "Your password has been reset."
+          "message": "Password berhasil diubah. Silakan login kembali."
       }
       ```
 
-  - **422 Unprocessable Entity** (Token expired atau password tidak cocok)
+  - **422 Unprocessable Entity** (OTP salah, expired, atau password tidak valid)
 
       ```json
       {
-          "message": "The password field confirmation does not match.",
-          "errors": {
-              "email": ["This password reset token is invalid."]
-          }
+          "message": "Kode OTP tidak valid."
       }
       ```
 
----
+## 3. Verifikasi Email (OTP)
 
-## 3. Verifikasi Email (Direct Link)
+Endpoint ini digunakan untuk memverifikasi alamat email menggunakan kode OTP 6-digit.
 
-Endpoint ini biasanya dipanggil melalui link yang dikirimkan ke email. Merupakan Signed URL.
+### a. Verifikasi OTP
 
-- **URL:** `/api/verify-email/{id}/{hash}`
-- **Method:** `GET`
-- **Auth:** `Authenticated`
-- **Parameters:** (Automatis dari link email)
-  - `id`: User ID
-  - `hash`: SHA-1 hash dari email
-- **Query Parameters:**
-  - `expires`: Timestamp kedaluwarsa
-  - `signature`: Signature hash untuk keamanan
-- **Responses:**
-  - **302 Redirect** (Redirect ke dashboard dengan query `?verified=1`)
-
----
-
-## 4. Kirim Ulang Verifikasi (Resend Notification)
-
-Digunakan jika pengguna belum menerima email verifikasi atau link sudah kedaluwarsa.
-
-- **URL:** `/api/email/verification-notification`
+- **URL:** `/api/email/verify-otp`
 - **Method:** `POST`
-- **Auth:** `Authenticated`
+- **Auth:** `Authenticated (Sanctum)`
+- **Request Body:**
+
+  ```json
+  {
+      "otp_code": "123456"
+  }
+  ```
+
 - **Responses:**
   - **200 OK**
 
-      ```json
-      {
-          "status": "verification-link-sent"
-      }
-      ```
+    ```json
+    {
+        "message": "Email berhasil diverifikasi."
+    }
+    ```
 
-  - **302 Redirect** (Jika email sudah terverifikasi, akan diredirect ke dashboard)
+  - **422 Unprocessable Entity** (Kode salah atau expired)
+
+    ```json
+    {
+        "message": "Kode OTP tidak valid."
+    }
+    ```
+
+---
+
+## 4. Kirim Ulang OTP (Resend Notification)
+
+Digunakan untuk meminta kode OTP baru.
+
+- **URL:** `/api/email/verification-notification`
+- **Method:** `POST`
+- **Auth:** `Authenticated (Sanctum)`
+- **Responses:**
+  - **200 OK**
+
+    ```json
+    {
+        "status": "otp-sent",
+        "message": "Kode OTP baru telah dikirim ke email Anda."
+    }
+    ```

@@ -35,7 +35,6 @@ return new class extends Migration
             
             $table->enum('source_type', ['REVENUE', 'TRUST_FUND'])
                   ->default('REVENUE')
-                  ->after('status')
                   ->comment('Source wallet: REVENUE = bill income, TRUST_FUND = santri top-up pool');
             
             // Minor Improvements
@@ -49,7 +48,7 @@ return new class extends Migration
             $table->timestamp('paid_at')->nullable();
             $table->text('rejection_reason')->nullable();
             $table->text('notes')->nullable();
-            $table->string('payment_proof')->nullable()->after('notes');
+            $table->string('payment_proof')->nullable();
             
             $table->timestamps();
             $table->softDeletes();

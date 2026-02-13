@@ -29,6 +29,22 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+
+        \Laravel\Fortify\Fortify::authenticateUsing(function ($request) {
+            $user = \App\Models\User::where('email', $request->email)->first();
+
+            if ($user && \Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+                if ($user->hasAnyRole(['super_admin', 'admin', 'admin_koperasi'])) {
+                    return $user;
+                }
+
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    \Laravel\Fortify\Fortify::username() => ['Maaf, akses login web hanya diperuntukkan bagi Administrator.'],
+                ]);
+            }
+
+            return null;
+        });
     }
 
     /**

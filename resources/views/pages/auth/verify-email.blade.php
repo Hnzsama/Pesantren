@@ -1,14 +1,22 @@
 <x-layouts::auth>
     <div class="mt-4 flex flex-col gap-6">
         <flux:text class="text-center">
-            {{ __('Please verify your email address by clicking on the link we just emailed to you.') }}
+            {{ __('Silakan masukkan 6 digit kode OTP yang kami kirimkan ke email Anda.') }}
         </flux:text>
 
         @if (session('status') == 'verification-link-sent')
             <flux:text class="text-center font-medium !dark:text-green-400 !text-green-600">
-                {{ __('A new verification link has been sent to the email address you provided during registration.') }}
+                {{ __('Kode OTP baru telah dikirim ke email Anda.') }}
             </flux:text>
         @endif
+
+        <form method="POST" action="{{ route('verification.otp') }}" class="space-y-4">
+            @csrf
+            <flux:input name="otp_code" label="Kode OTP" placeholder="123456" maxlength="6" required autofocus />
+            <flux:button type="submit" variant="primary" class="w-full">
+                {{ __('Verifikasi Email') }}
+            </flux:button>
+        </form>
 
         <div class="flex flex-col items-center justify-between space-y-3">
             <form method="POST" action="{{ route('verification.send') }}">

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Department extends Model
 {
-    use HasUlids;
+    use HasUlids, \App\Traits\HasSchoolScope;
 
     protected $fillable = [
         'school_id',

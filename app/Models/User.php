@@ -35,6 +35,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'fcm_token',
         'school_id',
+        'otp_code',
+        'otp_expires_at',
     ];
 
     /**
@@ -100,5 +102,36 @@ class User extends Authenticatable implements MustVerifyEmail
     public function issuedCards(): HasMany
     {
         return $this->hasMany(StudentCard::class, 'issued_by');
+    }
+
+    /**
+     * Send the email verification notification.
+     *
+     * @return void
+     */
+    public function sendEmailVerificationNotification()
+    {
+        $otp = (string) mt_rand(100000, 999999);
+        $this->otp_code = $otp;
+        $this->otp_expires_at = now()->addMinutes(10);
+        $this->save();
+
+        $this->notify(new \App\Notifications\EmailOtpNotification($otp));
+    }
+
+    /**
+     * Send the password reset notification.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $otp = (string) mt_rand(100000, 999999);
+        $this->otp_code = $otp;
+        $this->otp_expires_at = now()->addMinutes(10);
+        $this->save();
+
+        $this->notify(new \App\Notifications\PasswordResetOtpNotification($otp));
     }
 }
