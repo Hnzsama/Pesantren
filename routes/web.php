@@ -6,6 +6,10 @@ Route::get('/', function () {
     return redirect()->route('login');
 })->name('home');
 
+Route::middleware('guest')->group(function () {
+    Route::get('/forgot-password', \App\Livewire\Pages\Auth\ForgotPassword::class)->name('password.request');
+});
+
 Route::get('dashboard', function () {
     $user = auth()->user();
 
@@ -25,6 +29,7 @@ Route::get('dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('/email/verify', \App\Livewire\Pages\Auth\VerifyEmail::class)->name('verification.notice');
     Route::post('/verify-otp', [\App\Http\Controllers\Api\Auth\OtpVerificationController::class, 'verify'])->name('verification.otp');
 
     // Dashboards - Statistics

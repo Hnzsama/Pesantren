@@ -1,37 +1,33 @@
-<x-layouts::auth>
-    <div class="mt-4 flex flex-col gap-6">
-        <flux:text class="text-center">
-            {{ __('Silakan masukkan 6 digit kode OTP yang kami kirimkan ke email Anda.') }}
-        </flux:text>
+<div class="mt-4 flex flex-col gap-6">
+    <flux:heading size="lg" class="text-center">{{ __('Verifikasi Email') }}</flux:heading>
+    <flux:text class="text-center">
+        {{ __('Silakan masukkan 6 digit kode OTP yang kami kirimkan ke email Anda.') }}
+    </flux:text>
 
-        @if (session('status') == 'verification-link-sent')
-            <flux:text class="text-center font-medium !dark:text-green-400 !text-green-600">
-                {{ __('Kode OTP baru telah dikirim ke email Anda.') }}
-            </flux:text>
-        @endif
-
-        <form method="POST" action="{{ route('verification.otp') }}" class="space-y-4">
-            @csrf
-            <flux:input name="otp_code" label="Kode OTP" placeholder="123456" maxlength="6" required autofocus />
-            <flux:button type="submit" variant="primary" class="w-full">
-                {{ __('Verifikasi Email') }}
-            </flux:button>
-        </form>
-
-        <div class="flex flex-col items-center justify-between space-y-3">
-            <form method="POST" action="{{ route('verification.send') }}">
-                @csrf
-                <flux:button type="submit" variant="primary" class="w-full">
-                    {{ __('Resend verification email') }}
-                </flux:button>
-            </form>
-
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <flux:button variant="ghost" type="submit" class="text-sm cursor-pointer" data-test="logout-button">
-                    {{ __('Log out') }}
-                </flux:button>
-            </form>
+    <form wire:submit="verify" class="space-y-6">
+        <div class="flex justify-center">
+            <flux:otp wire:model="otp_code" length="6" autofocus />
         </div>
+
+        <div class="flex justify-center">
+             <flux:error name="otp_code" />
+        </div>
+
+        <flux:button type="submit" variant="primary" class="w-full">
+            {{ __('Verifikasi Email') }}
+        </flux:button>
+    </form>
+
+    <div class="flex flex-col items-center justify-between space-y-4">
+        <div class="text-sm text-zinc-500 dark:text-zinc-400">
+            {{ __('Tidak menerima kode?') }}
+            <button wire:click="resend" class="text-zinc-800 dark:text-zinc-200 hover:underline cursor-pointer font-medium">
+                {{ __('Kirim ulang') }}
+            </button>
+        </div>
+
+        <button wire:click="logout" class="text-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 cursor-pointer transition">
+            {{ __('Log out') }}
+        </button>
     </div>
-</x-layouts::auth>
+</div>
