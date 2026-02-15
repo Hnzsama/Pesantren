@@ -164,6 +164,7 @@ new #[Lazy] class extends Component {
         $tempDir = storage_path("app/temp/cards/{$batchId}");
         $zipPath = storage_path("app/temp/cards/{$batchId}.zip");
         
+    // Finalizes the batch processing and prepares the ZIP archive
         $zip = new \ZipArchive;
         if ($zip->open($zipPath, \ZipArchive::CREATE) === TRUE) {
             $files = \Illuminate\Support\Facades\File::files($tempDir);
