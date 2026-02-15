@@ -35,6 +35,8 @@ new #[Lazy] class extends Component {
     #[Url]
     public $statusFilter = '';
 
+
+
     public function with(): array
     {
         $user = auth()->user();
@@ -273,4 +275,6 @@ new #[Lazy] class extends Component {
             </div>
         </div>
     </flux:modal>
+
+
 </div>

@@ -25,6 +25,7 @@
         "livewire/flux-pro": "^2.10",
         "livewire/livewire": "^4.0",
         "midtrans/midtrans-php": "^2.6",
+        "spatie/browsershot": "^5.2",
         "spatie/laravel-permission": "^6.24"
     },
     "require-dev": {
