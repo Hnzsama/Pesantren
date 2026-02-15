@@ -120,10 +120,12 @@
                     {{ __('Feedback') }}
                 </flux:sidebar.item>
 
+                @role('admin')
                 <flux:sidebar.item icon="identification" :href="route('student-cards.index')"
                     :current="request()->routeIs('student-cards.*')" wire:navigate>
                     {{ __('Kartu Santri') }}
                 </flux:sidebar.item>
+                @endrole
 
 
             </flux:sidebar.group>
@@ -133,8 +135,13 @@
             <flux:sidebar.group :heading="__('Administrasi')">
                 @role('super_admin')
                 <flux:sidebar.item icon="printer" :href="route('student-card-requests.index')"
-                    :current="request()->routeIs('student-card-requests.*')" wire:navigate>
-                    {{ __('Cetak Kartu') }}
+                     :current="request()->routeIs('student-card-requests.*')" wire:navigate>
+                     {{ __('Permintaan Cetak') }}
+                </flux:sidebar.item>
+
+                <flux:sidebar.item icon="photo" :href="route('student-cards.design')"
+                     :current="request()->routeIs('student-cards.design')" wire:navigate>
+                     {{ __('Desain Kartu') }}
                 </flux:sidebar.item>
 
                 <flux:sidebar.item icon="building-library" :href="route('schools.index')"

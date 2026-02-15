@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\School; // Added import
+use App\Models\School;
 use App\Models\StudentCard;
 use Flux\Flux;
 use Livewire\Attributes\Url;
@@ -110,6 +110,8 @@ new #[Lazy] class extends Component {
                 <flux:subheading size="lg" class="mb-6">Kelola permintaan pencetakan kartu santri dari semua sekolah
                 </flux:subheading>
             </div>
+            
+
         </div>
         <flux:separator variant="subtle" />
     </div>
@@ -182,19 +184,25 @@ new #[Lazy] class extends Component {
                     </flux:table.cell>
 
                     <flux:table.cell>
-                        @if($card->status === 'request_print')
-                            <flux:button variant="primary" size="sm" icon="check"
-                                wire:click="confirmMarkAsPrinted('{{ $card->id }}')">
-                                Selesai Cetak
+                        <div class="flex gap-2">
+                            <flux:button variant="ghost" size="sm" icon="eye" href="{{ route('student-cards.preview', $card->id) }}" target="_blank">
+                                Preview
                             </flux:button>
-                        @else
-                            <flux:icon name="check-circle" class="text-green-500" />
-                        @endif
+                        
+                            @if($card->status === 'request_print')
+                                <flux:button variant="primary" size="sm" icon="check"
+                                    wire:click="confirmMarkAsPrinted('{{ $card->id }}')">
+                                    Selesai Manual
+                                </flux:button>
+                            @else
+                                <flux:icon name="check-circle" class="text-green-500" />
+                            @endif
+                        </div>
                     </flux:table.cell>
                 </flux:table.row>
             @empty
                 <flux:table.row>
-                    <flux:table.cell colspan="7" class="text-center py-12">
+                    <flux:table.cell colspan="8" class="text-center py-12">
                         <div class="flex flex-col items-center gap-3">
                             <flux:icon.inbox class="w-12 h-12 text-zinc-300 dark:text-zinc-600" />
                             <div>
@@ -227,4 +235,6 @@ new #[Lazy] class extends Component {
             </div>
         </div>
     </flux:modal>
+    
+
 </div>
