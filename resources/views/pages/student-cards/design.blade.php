@@ -328,7 +328,7 @@ new #[Lazy] class extends Component {
         </div>
     </div>
 
-    <!-- 3D Flip Styles -->
+    <!-- 3D Flip Styles for interactive card preview -->
     <style>
         .flip-card {
             background-color: transparent;
