@@ -86,6 +86,10 @@ Route::middleware(['auth'])->group(function () {
 
     // Student Cards
     Route::livewire('kartu-santri', 'pages::student-cards.index')->name('student-cards.index');
+    Route::get('/student-cards/{id}/preview', [\App\Http\Controllers\StudentCardPrintController::class, 'preview'])->name('student-cards.preview');
+    Route::post('/student-cards/download-zip', [\App\Http\Controllers\StudentCardPrintController::class, 'download'])->name('student-cards.download-zip');
+    Route::get('/student-cards/download-file/{filename}', [App\Http\Controllers\StudentCardPrintController::class, 'downloadFile'])->name('student-cards.download-file');
+    Route::livewire('desain-kartu-santri', 'pages::student-cards.design')->name('student-cards.design');
     Route::livewire('permintaan-cetak-kartu', 'pages::student-card-requests.index')->name('student-card-requests.index');
 
     // Withdrawals
