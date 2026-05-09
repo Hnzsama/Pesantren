@@ -301,10 +301,10 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
 
 <div class="w-full">
     <div class="relative mb-6 w-full">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col items-start gap-4">
             <div>
                 <flux:heading size="xl" level="1">Riwayat Presensi Kegiatan</flux:heading>
-                <flux:subheading size="lg" class="mb-6">Daftar pencatatan presensi kegiatan harian.</flux:subheading>
+                <flux:subheading size="lg">Daftar pencatatan presensi kegiatan harian.</flux:subheading>
             </div>
             <div class="flex gap-2">
                 <flux:button href="{{ route('activities.attendance.detail') }}" icon="table-cells" wire:navigate>
@@ -375,10 +375,16 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                         </flux:table.cell>
 
                         <flux:table.cell>
-                            <flux:button wire:click="viewSession('{{ $session->date }}', '{{ $session->activity_id }}')"
-                                icon="eye" size="sm" variant="ghost">
-                                Detail
-                            </flux:button>
+                            <div class="flex gap-2">
+                                <flux:button wire:click="viewSession('{{ $session->date }}', '{{ $session->activity_id }}')"
+                                    icon="eye" size="sm" variant="ghost">
+                                    Detail
+                                </flux:button>
+                                <flux:button href="{{ route('activities.attendance.print') }}?date={{ $session->date }}&activity_id={{ $session->activity_id }}&type={{ $session->activity->type === 'daily' ? 'daily' : 'activity' }}"
+                                    target="_blank" icon="printer" size="sm" variant="ghost">
+                                    Cetak
+                                </flux:button>
+                            </div>
                         </flux:table.cell>
                     </flux:table.row>
                 @empty
