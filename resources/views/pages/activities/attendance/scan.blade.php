@@ -184,6 +184,8 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
     }
 }; ?>
 
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
 <div class="min-h-screen flex flex-col items-center justify-center p-6 text-zinc-800 dark:text-zinc-100">
     <div class="w-full max-w-4xl space-y-8">
         {{-- Header --}}
@@ -278,6 +280,80 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
                     <p class="text-zinc-500 dark:text-zinc-400 mt-2">Silakan scan kartu santri pada alat scanner</p>
                 </div>
             @endif
+        </div>
+
+        {{-- Camera Scanner --}}
+        <div x-data="{ 
+            showCamera: false,
+            html5QrCode: null,
+            initScanner() {
+                this.html5QrCode = new Html5Qrcode('reader');
+            },
+            async startScanning() {
+                if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+                    alert('Maaf, kamera hanya bisa diakses melalui koneksi HTTPS yang aman.');
+                    return;
+                }
+
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    alert('Browser Anda tidak mendukung akses kamera.');
+                    return;
+                }
+
+                this.showCamera = true;
+                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+                
+                try {
+                    // Force permission request
+                    await Html5Qrcode.getCameras();
+                    
+                    await this.html5QrCode.start(
+                        { facingMode: 'environment' }, 
+                        config,
+                        (decodedText) => {
+                            $wire.set('scanInput', decodedText);
+                            $wire.processCardScan();
+                            this.stopScanning();
+                        }
+                    );
+                } catch (err) {
+                    console.error('Error starting scanner:', err);
+                    let message = 'Gagal mengakses kamera.';
+                    if (err.name === 'NotAllowedError' || err === 'Permission denied') {
+                        message = 'Izin kamera ditolak. Silakan izinkan akses kamera pada pengaturan browser Anda.';
+                    } else if (err.name === 'NotFoundError') {
+                        message = 'Kamera tidak ditemukan pada perangkat ini.';
+                    }
+                    alert(message);
+                    this.showCamera = false;
+                }
+            },
+            stopScanning() {
+                if (this.html5QrCode) {
+                    this.html5QrCode.stop().then(() => {
+                        this.showCamera = false;
+                    }).catch(err => console.error('Error stopping scanner:', err));
+                } else {
+                    this.showCamera = false;
+                }
+            }
+        }" x-init="initScanner()" class="space-y-4">
+            
+            <div x-show="showCamera" class="relative rounded-2xl overflow-hidden bg-black aspect-square max-w-sm mx-auto shadow-2xl border-4 border-accent/20">
+                <div id="reader" class="w-full h-full"></div>
+                <button @click="stopScanning()" class="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-full shadow-lg">
+                    <flux:icon.x-mark class="w-6 h-6" />
+                </button>
+                <div class="absolute inset-0 border-2 border-white/30 pointer-events-none flex items-center justify-center">
+                    <div class="w-48 h-48 border-2 border-accent rounded-lg"></div>
+                </div>
+            </div>
+
+            <div class="flex justify-center">
+                <flux:button x-show="!showCamera" @click="startScanning()" icon="camera" variant="filled" class="!bg-accent !text-accent-foreground">
+                    Scan Pakai Kamera HP
+                </flux:button>
+            </div>
         </div>
 
         {{-- Input Area --}}
