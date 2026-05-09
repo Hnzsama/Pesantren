@@ -21,11 +21,12 @@
                     {{ __('Dashboard') }}
                 </flux:sidebar.item>
 
-
+                @if(!auth()->user()->hasRole('admin_koperasi') && !auth()->user()->hasRole('kasir'))
                 <flux:sidebar.item icon="newspaper" :href="route('news.index')"
                     :current="request()->routeIs('news.index')" wire:navigate>
                     {{ __('Berita & Pengumuman') }}
                 </flux:sidebar.item>
+                @endif
             </flux:sidebar.group>
 
             @role('admin')
@@ -49,7 +50,6 @@
                     :current="request()->routeIs('levels.*')" wire:navigate>
                     {{ __('Data Kelas') }}
                 </flux:sidebar.item>
-
 
 
                 <flux:sidebar.item icon="clipboard-document-list" :href="route('activities.index')"
@@ -226,18 +226,21 @@
             </flux:sidebar.group>
             @endhasanyrole
 
-            @role('admin_koperasi')
+            @hasanyrole('admin_koperasi|kasir')
             <flux:sidebar.group :heading="__('Koperasi')">
+                @role('kasir')
                 <flux:sidebar.item icon="shopping-cart" :href="route('koperasi.pos')"
                     :current="request()->routeIs('koperasi.pos')" wire:navigate>
                     {{ __('Point of Sale (POS)') }}
                 </flux:sidebar.item>
+                @endrole
 
                 <flux:sidebar.item icon="clock" :href="route('koperasi.history')"
                     :current="request()->routeIs('koperasi.history')" wire:navigate>
                     {{ __('Riwayat Pembelian') }}
                 </flux:sidebar.item>
 
+                @role('admin_koperasi')
                 <flux:sidebar.item icon="archive-box" :href="route('koperasi.products')"
                     :current="request()->routeIs('koperasi.products')" wire:navigate>
                     {{ __('Produk & Jasa') }}
@@ -252,8 +255,14 @@
                     :current="request()->routeIs('koperasi.stock-history')" wire:navigate>
                     {{ __('Riwayat Stok') }}
                 </flux:sidebar.item>
+
+                <flux:sidebar.item icon="users" :href="route('koperasi.cashiers')"
+                    :current="request()->routeIs('koperasi.cashiers')" wire:navigate>
+                    {{ __('Kelola Kasir') }}
+                </flux:sidebar.item>
+                @endrole
             </flux:sidebar.group>
-            @endrole
+            @endhasanyrole
         </flux:sidebar.nav>
 
         <flux:spacer />

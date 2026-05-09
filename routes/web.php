@@ -25,7 +25,11 @@ Route::get('dashboard', function () {
         return redirect()->route('koperasi.dashboard');
     }
 
-    return \Livewire\Volt\Volt::render('pages::dashboard.index');
+    if ($user->hasRole('kasir')) {
+        return redirect()->route('koperasi.dashboard');
+    }
+
+    return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
@@ -70,6 +74,7 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('presensi-kegiatan/catat', 'pages::activities.attendance.entry')->name('activities.attendance.entry');
     Route::livewire('presensi-kegiatan/scan', 'pages::activities.attendance.scan')->name('activities.attendance.scan');
     Route::livewire('presensi-kegiatan/detail', 'pages::activities.attendance.detail')->name('activities.attendance.detail');
+    Route::get('presensi-kegiatan/print', [\App\Http\Controllers\AttendanceReportController::class, 'print'])->name('activities.attendance.print');
 
     // Achievements
     Route::livewire('jadwal-sowan', 'pages::sowan-schedules.index')->name('sowan-schedules.index');
@@ -110,6 +115,9 @@ Route::middleware(['auth'])->group(function () {
         Route::livewire('produk', 'pages::dashboard.cooperative.products')->name('koperasi.products');
         Route::livewire('stok-opname', 'pages::dashboard.cooperative.stock-opname')->name('koperasi.stock-opname');
         Route::livewire('riwayat-stok', 'pages::dashboard.cooperative.stock-history')->name('koperasi.stock-history');
+        Route::get('export', [\App\Http\Controllers\CooperativeReportController::class, 'export'])->name('cooperative.export');
+        Route::get('print-struk/{invoiceCode}', [\App\Http\Controllers\CooperativeReportController::class, 'printReceipt'])->name('cooperative.print-receipt');
+        Route::livewire('kasir', 'pages::dashboard.cooperative.cashiers')->name('koperasi.cashiers');
     });
 });
 
