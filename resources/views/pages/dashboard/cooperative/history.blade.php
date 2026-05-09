@@ -57,13 +57,25 @@ new #[Lazy] class extends Component {
     #[Url]
     public $dateTo = '';
 
+    #[Url]
+    public $paymentMethodFilter = '';
+
+    public $exportFilter = 'today';
+    public $exportDateFrom = '';
+    public $exportDateTo = '';
+
+
     public function with(): array
     {
         $schoolId = auth()->user()->school_id;
 
+        $user = auth()->user();
+        $isCashier = $user->hasRole('kasir');
+
         $query = WalletTransaction::with(['student', 'operator', 'items'])
             ->where('school_id', $schoolId)
             ->where('category', 'PURCHASE')
+            ->when($isCashier, fn($q) => $q->where('operator_id', $user->id))
             ->orderBy('created_at', 'desc');
 
         if ($this->search) {
@@ -88,6 +100,10 @@ new #[Lazy] class extends Component {
             $query->whereDate('created_at', '<=', $this->dateTo);
         }
 
+        if ($this->paymentMethodFilter) {
+            $query->where('payment_method', $this->paymentMethodFilter);
+        }
+
         return [
             'transactions' => $query->paginate(15),
         ];
@@ -103,18 +119,27 @@ new #[Lazy] class extends Component {
                     {{ __('Daftar lengkap transaksi belanja santri di koperasi') }}
                 </flux:subheading>
             </div>
+            @role('kasir')
+            <flux:modal.trigger name="export-report-modal">
+                <flux:button variant="primary" icon="printer">Cetak Laporan</flux:button>
+            </flux:modal.trigger>
+            @endrole
         </div>
         <flux:separator variant="subtle" />
     </div>
 
     <!-- Filters -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <flux:input wire:model.live="search" label="Cari Invoice" placeholder="POS-..." icon="magnifying-glass"
             clearable />
         <flux:input wire:model.live="studentFilter" label="Cari Santri" placeholder="Nama / NIS / Kartu" icon="user"
             clearable />
         <flux:input wire:model.live="dateFrom" type="date" label="Dari Tanggal" clearable />
         <flux:input wire:model.live="dateTo" type="date" label="Sampai Tanggal" clearable />
+        <flux:select wire:model.live="paymentMethodFilter" label="Metode" placeholder="Semua Metode" clearable>
+            <flux:select.option value="cash">Tunai</flux:select.option>
+            <flux:select.option value="wallet">Dompet (Wallet)</flux:select.option>
+        </flux:select>
     </div>
 
     <flux:table :paginate="$transactions">
@@ -124,6 +149,7 @@ new #[Lazy] class extends Component {
             <flux:table.column>Santri</flux:table.column>
             <flux:table.column>Barang/Jasa</flux:table.column>
             <flux:table.column>Nominal</flux:table.column>
+            <flux:table.column>Metode</flux:table.column>
             <flux:table.column>Operator</flux:table.column>
             <flux:table.column align="end"></flux:table.column>
         </flux:table.columns>
@@ -142,8 +168,13 @@ new #[Lazy] class extends Component {
                     </flux:table.cell>
                     <flux:table.cell>
                         <div class="flex flex-col">
-                            <span class="font-medium">{{ $transaction->student->full_name }}</span>
-                            <span class="text-xs text-zinc-500">{{ $transaction->student->nis }}</span>
+                            @if($transaction->student)
+                                <span class="font-medium">{{ $transaction->student->full_name }}</span>
+                                <span class="text-xs text-zinc-500">{{ $transaction->student->nis }}</span>
+                            @else
+                                <span class="font-medium text-zinc-400">PELANGGAN UMUM</span>
+                                <span class="text-[10px] text-zinc-400 opacity-60 italic">Guest Checkout</span>
+                            @endif
                         </div>
                     </flux:table.cell>
                     <flux:table.cell>
@@ -164,11 +195,20 @@ new #[Lazy] class extends Component {
                         -Rp {{ number_format($transaction->amount, 0, ',', '.') }}
                     </flux:table.cell>
                     <flux:table.cell>
+                        @if($transaction->payment_method === 'cash')
+                            <flux:badge size="sm" color="blue" inset="top bottom">TUNAI</flux:badge>
+                        @else
+                            <flux:badge size="sm" color="green" inset="top bottom">DOMPET</flux:badge>
+                        @endif
+                    </flux:table.cell>
+                    <flux:table.cell>
                         <flux:badge size="sm" variant="outline" icon="user-circle">
                             {{ $transaction->operator->name ?? 'System' }}
                         </flux:badge>
                     </flux:table.cell>
-                    <flux:table.cell align="end">
+                    <flux:table.cell align="end" class="flex items-center gap-1">
+                        <flux:button variant="ghost" size="sm" icon="printer" 
+                            x-on:click="window.open('{{ route('cooperative.print-receipt', ['invoiceCode' => $transaction->invoice_code]) }}', '_blank', 'width=400,height=600')" />
                         <flux:modal.trigger name="detail-{{ $transaction->id }}">
                             <flux:button variant="ghost" size="sm" icon="eye" />
                         </flux:modal.trigger>
@@ -186,7 +226,7 @@ new #[Lazy] class extends Component {
 
     <!-- Detail Modals -->
     @foreach ($transactions as $transaction)
-        <flux:modal name="detail-{{ $transaction->id }}" class="min-w-[450px]">
+        <flux:modal name="detail-{{ $transaction->id }}" class="w-full max-w-lg">
             <div class="space-y-6">
                 <div class="flex justify-between items-start">
                     <div>
@@ -202,10 +242,15 @@ new #[Lazy] class extends Component {
                         <span class="font-medium text-sm">{{ $transaction->created_at->format('d M Y H:i:s') }}</span>
                     </div>
                     <div class="flex justify-between border-t pt-4 dark:border-zinc-800">
-                        <span class="text-zinc-500 text-sm">Santri</span>
+                        <span class="text-zinc-500 text-sm">Pelanggan</span>
                         <div class="text-right">
-                            <div class="font-medium text-sm">{{ $transaction->student->full_name }}</div>
-                            <div class="text-xs text-zinc-400">{{ $transaction->student->nis }}</div>
+                            @if($transaction->student)
+                                <div class="font-medium text-sm">{{ $transaction->student->full_name }}</div>
+                                <div class="text-xs text-zinc-400">{{ $transaction->student->nis }}</div>
+                            @else
+                                <div class="font-medium text-sm text-zinc-400 italic">Pelanggan Umum</div>
+                                <div class="text-[10px] text-zinc-500 uppercase tracking-widest">Tunai</div>
+                            @endif
                         </div>
                     </div>
                     <div class="flex justify-between border-t pt-4 dark:border-zinc-800">
@@ -222,7 +267,7 @@ new #[Lazy] class extends Component {
                 @if ($transaction->items->isNotEmpty())
                     <div class="space-y-4">
                         <flux:heading size="sm" class="uppercase tracking-widest text-zinc-400">Daftar Barang</flux:heading>
-                        <div class="rounded-xl border border-zinc-200 dark:border-zinc-800 divide-y dark:divide-zinc-800">
+                        <div class="max-h-64 overflow-y-auto rounded-xl border border-zinc-200 dark:border-zinc-800 divide-y dark:divide-zinc-800 custom-scrollbar">
                             @foreach ($transaction->items as $item)
                                 <div class="p-3 flex justify-between items-center">
                                     <div class="flex-1">
@@ -240,7 +285,11 @@ new #[Lazy] class extends Component {
                     </div>
                 @endif
 
-                <div class="flex justify-end">
+                <div class="flex justify-between items-center pt-4 border-t dark:border-zinc-800">
+                    <flux:button variant="primary" size="sm" icon="printer"
+                        x-on:click="window.open('{{ route('cooperative.print-receipt', ['invoiceCode' => $transaction->invoice_code]) }}', '_blank', 'width=400,height=600')">
+                        Cetak Struk
+                    </flux:button>
                     <flux:modal.close>
                         <flux:button variant="ghost">Tutup</flux:button>
                     </flux:modal.close>
@@ -248,4 +297,36 @@ new #[Lazy] class extends Component {
             </div>
         </flux:modal>
     @endforeach
+
+    <!-- Export Modal -->
+    <flux:modal name="export-report-modal" class="w-full max-w-md">
+        <form action="{{ route('cooperative.export') }}" method="GET" target="_blank" class="space-y-6">
+            <div>
+                <flux:heading size="lg">Cetak Laporan Penjualan</flux:heading>
+                <flux:subheading>Pilih rentang waktu untuk laporan penjualan kasir.</flux:subheading>
+            </div>
+
+            <flux:select name="filter" wire:model.live="exportFilter" label="Periode Waktu">
+                <flux:select.option value="today">Hari Ini</flux:select.option>
+                <flux:select.option value="week">Minggu Ini</flux:select.option>
+                <flux:select.option value="month">Bulan Ini</flux:select.option>
+                <flux:select.option value="year">Tahun Ini</flux:select.option>
+                <flux:select.option value="custom">Rentang Tanggal (Kustom)</flux:select.option>
+            </flux:select>
+
+            @if($exportFilter === 'custom')
+                <div class="grid grid-cols-2 gap-4">
+                    <flux:input type="date" name="from" wire:model="exportDateFrom" label="Dari Tanggal" required />
+                    <flux:input type="date" name="to" wire:model="exportDateTo" label="Sampai Tanggal" required />
+                </div>
+            @endif
+
+            <div class="flex justify-end gap-2">
+                <flux:modal.close>
+                    <flux:button variant="ghost">Batal</flux:button>
+                </flux:modal.close>
+                <flux:button type="submit" variant="primary" icon="printer">Cetak</flux:button>
+            </div>
+        </form>
+    </flux:modal>
 </div>

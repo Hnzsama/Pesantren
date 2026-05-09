@@ -15,14 +15,17 @@ class Product extends Model
         'school_id',
         'name',
         'sku',
+        'image',
         'type',
-        'price',
+        'selling_price',
+        'purchase_price',
         'stock',
         'is_active',
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
+        'selling_price' => 'decimal:2',
+        'purchase_price' => 'decimal:2',
         'stock' => 'integer',
         'is_active' => 'boolean',
     ];

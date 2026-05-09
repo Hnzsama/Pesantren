@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sowan_schedules', function (Blueprint $table) {
-            $table->foreignUlid('user_id')->nullable()->after('school_id')->constrained('users')->nullOnDelete();
+        Schema::table('products', function (Blueprint $table) {
+            $table->string('image')->nullable()->after('sku');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('sowan_schedules', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('user_id');
+        Schema::table('products', function (Blueprint $table) {
+            //
         });
     }
 };

@@ -7,6 +7,9 @@ use Livewire\Attributes\Url;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\WithFileUploads;
+use App\Services\ImageCompressionService;
+use Illuminate\Support\Str;
 use Flux\Flux;
 
 new #[Lazy] #[Layout('layouts.app')] class extends Component {
@@ -26,7 +29,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
         HTML;
     }
 
-    use WithPagination;
+    use WithPagination, WithFileUploads;
 
     #[Url]
     public $search = '';
@@ -35,16 +38,25 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
     public $typeFilter = '';
 
     public $editingId = null;
-    public $showModal = false;
-    public $showStockModal = false;
+    public $productIdToDelete = null;
 
     // Form fields
     public $name = '';
     public $sku = '';
     public $type = 'PRODUCT';
-    public $price = 0;
+    public $selling_price = 0;
+    public $purchase_price = 0;
     public $stock = 0;
     public $is_active = true;
+    public $tempImage = null; // Stored file from cropper
+    public $existingImage = null; // Existing image path
+
+    public function updatedTempImage()
+    {
+        $this->validate([
+            'tempImage' => 'image|max:10240',
+        ]);
+    }
 
     // Stock add fields
     public $selectedProduct = null;
@@ -77,7 +89,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
     public function create()
     {
         $this->resetForm();
-        $this->showModal = true;
+        Flux::modal('product-form-modal')->show();
     }
 
     public function edit($id)
@@ -87,20 +99,24 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
         $this->name = $product->name;
         $this->sku = $product->sku;
         $this->type = $product->type;
-        $this->price = $product->price;
+        $this->selling_price = $product->selling_price;
+        $this->purchase_price = $product->purchase_price;
         $this->stock = $product->stock;
         $this->is_active = $product->is_active;
+        $this->existingImage = $product->image;
+        $this->tempImage = null;
 
-        $this->showModal = true;
+        Flux::modal('product-form-modal')->show();
     }
 
-    public function save()
+    public function save(ImageCompressionService $compressor)
     {
         $this->validate([
             'name' => 'required|string|max:255',
             'sku' => 'nullable|string|max:50',
             'type' => 'required|in:PRODUCT,SERVICE',
-            'price' => 'required|numeric|min:0',
+            'selling_price' => 'required|numeric|min:0',
+            'purchase_price' => 'nullable|numeric|min:0',
             'stock' => 'nullable|integer|min:0',
         ]);
 
@@ -109,10 +125,19 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
             'name' => $this->name,
             'sku' => $this->sku,
             'type' => $this->type,
-            'price' => $this->price,
+            'selling_price' => $this->selling_price,
+            'purchase_price' => $this->purchase_price,
             'stock' => $this->type === 'PRODUCT' ? $this->stock : null,
             'is_active' => $this->is_active,
         ];
+
+        // Process uploaded image if exists
+        if ($this->tempImage) {
+            $filename = Str::uuid();
+            $data['image'] = $compressor->storeAsWebP($this->tempImage, 'products', $filename, 80);
+        } else if (!$this->existingImage) {
+            $data['image'] = null;
+        }
 
         if ($this->editingId) {
             Product::find($this->editingId)->update($data);
@@ -137,8 +162,25 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
             Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Produk berhasil ditambahkan.');
         }
 
-        $this->showModal = false;
+        Flux::modal('product-form-modal')->close();
         $this->resetForm();
+    }
+
+    public function confirmDelete($id)
+    {
+        $this->productIdToDelete = $id;
+        $this->modal('delete-product-modal')->show();
+    }
+
+    public function destroy()
+    {
+        $product = Product::find($this->productIdToDelete);
+        if ($product) {
+            $product->delete();
+            Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Produk berhasil dihapus.');
+        }
+        $this->reset('productIdToDelete');
+        $this->modal('delete-product-modal')->close();
     }
 
     public function openAddStock($id)
@@ -146,7 +188,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
         $this->selectedProduct = Product::findOrFail($id);
         $this->addStockQty = 0;
         $this->stockNote = '';
-        $this->showStockModal = true;
+        Flux::modal('add-stock-modal')->show();
     }
 
     public function addStock()
@@ -174,7 +216,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
             'pic_user_id' => auth()->id(),
         ]);
 
-        $this->showStockModal = false;
+        Flux::modal('add-stock-modal')->close();
         Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Stok berhasil ditambahkan.');
     }
 
@@ -184,19 +226,26 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
         $this->name = '';
         $this->sku = '';
         $this->type = 'PRODUCT';
-        $this->price = 0;
+        $this->selling_price = 0;
+        $this->purchase_price = 0;
         $this->stock = 0;
         $this->is_active = true;
+        $this->tempImage = null;
+        $this->existingImage = null;
     }
 }; ?>
 
 <div class="w-full">
-    <div class="flex justify-between items-center mb-6">
+    <!-- Include Cropper.js CDN -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div>
             <flux:heading size="xl" level="1">{{ __('Produk & Jasa') }}</flux:heading>
             <flux:subheading size="lg">{{ __('Kelola barang dan jasa koperasi') }}</flux:subheading>
         </div>
-        <flux:button variant="primary" icon="plus" wire:click="create">{{ __('Tambah Baru') }}</flux:button>
+        <flux:button variant="primary" icon="plus" wire:click="create" class="w-full md:w-auto">{{ __('Tambah Baru') }}</flux:button>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -214,7 +263,9 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
             <flux:table.column>Nama</flux:table.column>
             <flux:table.column>SKU</flux:table.column>
             <flux:table.column>Tipe</flux:table.column>
-            <flux:table.column>Harga</flux:table.column>
+            <flux:table.column>Harga Jual</flux:table.column>
+            <flux:table.column>Harga Beli</flux:table.column>
+            <flux:table.column>Margin</flux:table.column>
             <flux:table.column>Stok</flux:table.column>
             <flux:table.column>Status</flux:table.column>
             <flux:table.column align="end"></flux:table.column>
@@ -223,14 +274,38 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
         <flux:table.rows>
             @foreach ($products as $product)
                 <flux:table.row :key="$product->id">
-                    <flux:table.cell class="font-medium">{{ $product->name }}</flux:table.cell>
+                    <flux:table.cell>
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 overflow-hidden shrink-0 flex items-center justify-center">
+                                @if($product->image)
+                                    <img src="{{ Storage::url($product->image) }}" class="w-full h-full object-cover">
+                                @else
+                                    <flux:icon.photo class="w-5 h-5 text-zinc-400" />
+                                @endif
+                            </div>
+                            <span class="font-medium">{{ $product->name }}</span>
+                        </div>
+                    </flux:table.cell>
                     <flux:table.cell class="text-zinc-500">{{ $product->sku ?? '-' }}</flux:table.cell>
                     <flux:table.cell>
                         <flux:badge size="sm" :variant="$product->type === 'PRODUCT' ? 'neutral' : 'outline'">
                             {{ $product->type }}
                         </flux:badge>
                     </flux:table.cell>
-                    <flux:table.cell>Rp {{ number_format($product->price, 0, ',', '.') }}</flux:table.cell>
+                    <flux:table.cell>Rp {{ number_format($product->selling_price, 0, ',', '.') }}</flux:table.cell>
+                    <flux:table.cell>Rp {{ number_format($product->purchase_price, 0, ',', '.') }}</flux:table.cell>
+                    <flux:table.cell>
+                        @php
+                            $marginRp = $product->selling_price - $product->purchase_price;
+                            $marginPct = $product->purchase_price > 0 ? ($marginRp / $product->purchase_price) * 100 : ($product->selling_price > 0 ? 100 : 0);
+                        @endphp
+                        <div class="flex flex-col">
+                            <span class="{{ $marginRp > 0 ? 'text-green-600 dark:text-green-400' : ($marginRp < 0 ? 'text-red-600 dark:text-red-400' : 'text-zinc-500') }} font-medium text-sm">
+                                {{ $marginRp > 0 ? '+' : '' }}Rp {{ number_format($marginRp, 0, ',', '.') }}
+                            </span>
+                            <span class="text-xs text-zinc-500">{{ number_format($marginPct, 1, ',', '.') }}%</span>
+                        </div>
+                    </flux:table.cell>
                     <flux:table.cell>
                         @if ($product->type === 'PRODUCT')
                             <span class="{{ $product->stock <= 5 ? 'text-red-500 font-bold' : '' }}">
@@ -255,6 +330,10 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                                     <flux:menu.item icon="plus-circle" wire:click="openAddStock('{{ $product->id }}')">Tambah
                                         Stok</flux:menu.item>
                                 @endif
+                                <flux:menu.separator />
+                                <flux:modal.trigger name="delete-product-modal">
+                                    <flux:menu.item variant="danger" icon="trash" wire:click="confirmDelete('{{ $product->id }}')">Hapus</flux:menu.item>
+                                </flux:modal.trigger>
                             </flux:menu>
                         </flux:dropdown>
                     </flux:table.cell>
@@ -264,14 +343,97 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
     </flux:table>
 
     <!-- Modal Form -->
-    <flux:modal wire:model="showModal" class="md:w-[500px]">
-        <div class="space-y-6">
-            <div>
-                <flux:heading size="lg">{{ $editingId ? 'Edit Produk' : 'Tambah Produk' }}</flux:heading>
-                <flux:subheading>Lengkapi informasi produk atau jasa di bawah ini.</flux:subheading>
-            </div>
+    <flux:modal name="product-form-modal" class="w-full max-w-lg">
+        <div class="space-y-6" x-data="{
+                    showCropper: false,
+                    cropper: null,
+                    croppedImage: null,
+                    
+                    fileSelected(e) {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            document.getElementById('crop-image').src = e.target.result;
+                            this.showCropper = true;
+                            
+                            setTimeout(() => {
+                                if (this.cropper) this.cropper.destroy();
+                                this.cropper = new Cropper(document.getElementById('crop-image'), {
+                                    aspectRatio: 1, viewMode: 1, autoCropArea: 1, background: false
+                                });
+                            }, 100);
+                        };
+                        reader.readAsDataURL(file);
+                    },
+                    
+                    applyCrop() {
+                        if (!this.cropper) return;
+                        const canvas = this.cropper.getCroppedCanvas({ width: 500, height: 500 });
+                        this.croppedImage = canvas.toDataURL('image/webp', 0.8);
+                        
+                        canvas.toBlob((blob) => {
+                            if (!blob) return;
+                            let file = new File([blob], 'product_' + Date.now() + '.webp', { type: 'image/webp' });
+                            this.$wire.upload('tempImage', file, () => {
+                                this.$wire.set('existingImage', null);
+                            });
+                        }, 'image/webp', 0.8);
+                        
+                        this.cropper.destroy();
+                        this.cropper = null;
+                        this.showCropper = false;
+                        if (this.$refs.fileInput) this.$refs.fileInput.value = '';
+                    },
+                    
+                    cancelCrop() {
+                        if (this.cropper) { this.cropper.destroy(); this.cropper = null; }
+                        this.showCropper = false;
+                        if (this.$refs.fileInput) this.$refs.fileInput.value = '';
+                    },
+                    
+                    removeImage() {
+                        this.croppedImage = null;
+                        this.$wire.set('tempImage', null);
+                        this.$wire.set('existingImage', null);
+                    }
+                }" x-effect="if(!$modal('product-form-modal').open) { croppedImage = null; showCropper = false; }">
+            
+            <!-- FORM VIEW -->
+            <div x-show="!showCropper" class="space-y-6">
+                <div>
+                    <flux:heading size="lg">{{ $editingId ? 'Edit Produk' : 'Tambah Produk' }}</flux:heading>
+                    <flux:subheading>Lengkapi informasi produk atau jasa di bawah ini.</flux:subheading>
+                </div>
 
-            <div class="space-y-4">
+                <div class="space-y-4">
+                    <div class="space-y-2">
+                        <flux:label>Gambar Produk (1:1)</flux:label>
+                        <input type="file" x-ref="fileInput" @change="fileSelected" accept="image/*" class="hidden">
+                        
+                        <div class="flex items-center gap-4">
+                            <div class="relative w-20 h-20 rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 overflow-hidden bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center shrink-0">
+                                <template x-if="croppedImage">
+                                    <img :src="croppedImage" class="w-full h-full object-cover">
+                                </template>
+                                <template x-if="!croppedImage && $wire.existingImage">
+                                    <img :src="'/storage/' + $wire.existingImage" class="w-full h-full object-cover">
+                                </template>
+                                <template x-if="!croppedImage && !$wire.existingImage">
+                                    <flux:icon.photo class="w-8 h-8 text-zinc-400" />
+                                </template>
+                            </div>
+                            
+                            <div class="flex flex-col gap-2">
+                                <flux:button size="sm" @click="$refs.fileInput.click()">Pilih Gambar</flux:button>
+                                <template x-if="croppedImage || $wire.existingImage">
+                                    <flux:button size="sm" variant="danger" x-show="croppedImage || $wire.tempImage || $wire.existingImage" @click="removeImage">Hapus</flux:button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
                 <flux:input wire:model="name" label="Nama Produk/Jasa" placeholder="Contoh: Air Mineral..." />
                 <flux:input wire:model="sku" label="SKU (Opsional)" placeholder="P-001" />
 
@@ -280,7 +442,10 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                     <flux:select.option value="SERVICE">Jasa (SERVICE)</flux:select.option>
                 </flux:select>
 
-                <flux:input type="number" wire:model="price" label="Harga Jual" prefix="Rp" />
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <flux:input type="number" wire:model="purchase_price" label="Harga Beli" prefix="Rp" />
+                    <flux:input type="number" wire:model="selling_price" label="Harga Jual" prefix="Rp" />
+                </div>
 
                 @if ($type === 'PRODUCT' && !$editingId)
                     <flux:input type="number" wire:model="stock" label="Stok Awal" />
@@ -290,15 +455,32 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
             </div>
 
             <div class="flex justify-end gap-2">
-                <flux:button variant="ghost" wire:click="$set('showModal', false)">Batal</flux:button>
+                <flux:modal.close>
+                    <flux:button variant="ghost">Batal</flux:button>
+                </flux:modal.close>
                 <flux:button variant="primary" wire:click="save">Simpan</flux:button>
+            </div>
+        </div>
+
+        <!-- CROPPER VIEW -->
+        <div x-show="showCropper" style="display: none;" class="space-y-6">
+            <div class="flex justify-between items-center mb-4">
+                <flux:heading>Potong Gambar</flux:heading>
+                <flux:button variant="ghost" size="sm" icon="x-mark" @click="cancelCrop" />
+            </div>
+            <div class="flex-1 overflow-hidden min-h-[300px] bg-zinc-100 rounded-lg">
+                <img id="crop-image" class="max-w-full block">
+            </div>
+            <div class="flex justify-end gap-2 mt-4">
+                <flux:button variant="ghost" @click="cancelCrop">Batal</flux:button>
+                <flux:button variant="primary" @click="applyCrop">Potong & Simpan</flux:button>
             </div>
         </div>
     </flux:modal>
 
     <!-- Modal Add Stock -->
     @if ($selectedProduct)
-        <flux:modal wire:model="showStockModal" class="md:w-[400px]">
+        <flux:modal name="add-stock-modal" class="w-full max-w-md">
             <div class="space-y-6">
                 <div>
                     <flux:heading size="lg">Tambah Stok</flux:heading>
@@ -313,10 +495,32 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                 </div>
 
                 <div class="flex justify-end gap-2">
-                    <flux:button variant="ghost" wire:click="$set('showStockModal', false)">Batal</flux:button>
+                    <flux:modal.close>
+                        <flux:button variant="ghost">Batal</flux:button>
+                    </flux:modal.close>
                     <flux:button variant="primary" wire:click="addStock">Tambah Stok</flux:button>
                 </div>
             </div>
         </flux:modal>
     @endif
+
+    <!-- Delete Modal -->
+    <flux:modal name="delete-product-modal" class="min-w-[22rem]">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg">Hapus Produk?</flux:heading>
+                <flux:text class="mt-2">
+                    Apakah Anda yakin ingin menghapus produk ini?<br>
+                    Tindakan ini tidak dapat dibatalkan.
+                </flux:text>
+            </div>
+            <div class="flex gap-2">
+                <flux:spacer />
+                <flux:modal.close>
+                    <flux:button variant="ghost">Batal</flux:button>
+                </flux:modal.close>
+                <flux:button wire:click="destroy" variant="danger">Hapus</flux:button>
+            </div>
+        </div>
+    </flux:modal>
 </div>

@@ -16,9 +16,11 @@ return new class extends Migration
             $table->foreignUlid('school_id')->nullable()->constrained()->onDelete('cascade');
             $table->string('name');
             $table->string('email')->nullable()->unique();
-            $table->string('phone_number')->unique();
+            $table->string('phone_number')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('otp_code', 6)->nullable();
+            $table->timestamp('otp_expires_at')->nullable();
             $table->text('two_factor_secret')->nullable();
             $table->text('two_factor_recovery_codes')->nullable();
             $table->timestamp('two_factor_confirmed_at')->nullable();

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('website')->nullable();
             $table->string('theme_color')->nullable(); // Hex color for theme customization
             $table->string('logo_path')->nullable(); // Path to school logo
+            $table->string('profile_photo_path')->nullable();
             $table->timestamps();
         });
     }

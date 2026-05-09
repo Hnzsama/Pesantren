@@ -149,13 +149,13 @@ new #[Lazy] class extends Component {
 
 <div class="w-full">
     <div class="relative mb-6 w-full">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col items-start gap-4 mb-4">
             <div>
                 <flux:heading size="xl" level="1">{{ __('Semester') }}</flux:heading>
-                <flux:subheading size="lg" class="mb-6">{{ __('Kelola semester per tahun ajaran') }}</flux:subheading>
+                <flux:subheading size="lg" class="">{{ __('Kelola semester per tahun ajaran') }}</flux:subheading>
             </div>
             <flux:modal.trigger name="semester-modal">
-                <flux:button variant="primary" icon="plus" wire:click="create">{{ __('Tambah Semester') }}</flux:button>
+                <flux:button variant="primary" icon="plus" wire:click="create" class="w-fit">{{ __('Tambah Semester') }}</flux:button>
             </flux:modal.trigger>
         </div>
         <flux:separator variant="subtle" />

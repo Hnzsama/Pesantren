@@ -30,8 +30,6 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
 
     use WithPagination;
 
-    public $showCreateModal = false;
-    public $showDetailModal = false;
     public $note = '';
 
     // Active Opname Detail
@@ -51,7 +49,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
     public function create()
     {
         $this->note = '';
-        $this->showCreateModal = true;
+        Flux::modal('create-opname-modal')->show();
     }
 
     public function startOpname()
@@ -84,7 +82,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
             }
 
             DB::commit();
-            $this->showCreateModal = false;
+            Flux::modal('create-opname-modal')->close();
             $this->viewDetail($opname->id);
             Flux::toast(variant: 'success', heading: 'Draf Dibuat', text: 'Silakan isi jumlah fisik stok.');
         } catch (\Exception $e) {
@@ -97,7 +95,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
     {
         $this->activeOpname = StockOpname::with('items.product')->findOrFail($id);
         $this->physicalStocks = $this->activeOpname->items->pluck('physical_stock', 'product_id')->toArray();
-        $this->showDetailModal = true;
+        Flux::modal('detail-opname-modal')->show();
     }
 
     public function updatedPhysicalStocks($value, $productId)
@@ -151,7 +149,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
             $this->activeOpname->update(['status' => 'FINAL']);
 
             DB::commit();
-            $this->showDetailModal = false;
+            Flux::modal('detail-opname-modal')->close();
             Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Stok Opname telah difinalisasi.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -161,12 +159,12 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
 }; ?>
 
 <div class="w-full">
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div>
             <flux:heading size="xl" level="1">{{ __('Stok Opname') }}</flux:heading>
             <flux:subheading size="lg">{{ __('Audit fisik stok barang berkala') }}</flux:subheading>
         </div>
-        <flux:button variant="primary" icon="plus" wire:click="create">{{ __('Buat Opname Baru') }}</flux:button>
+        <flux:button variant="primary" icon="plus" wire:click="create" class="w-full md:w-auto">{{ __('Buat Opname Baru') }}</flux:button>
     </div>
 
     <flux:table :paginate="$opnames">
@@ -202,7 +200,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
     </flux:table>
 
     <!-- Modal Create -->
-    <flux:modal wire:model="showCreateModal" class="md:w-[450px]">
+    <flux:modal name="create-opname-modal" class="w-full max-w-lg">
         <div class="space-y-6">
             <div>
                 <flux:heading size="lg">Buat Stok Opname Baru</flux:heading>
@@ -213,15 +211,17 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                 placeholder="Contoh: Audit akhir bulan Februari..." />
 
             <div class="flex justify-end gap-2">
-                <flux:button variant="ghost" wire:click="$set('showCreateModal', false)">Batal</flux:button>
+                <flux:modal.close>
+                    <flux:button variant="ghost">Batal</flux:button>
+                </flux:modal.close>
                 <flux:button variant="primary" wire:click="startOpname">Mulai Opname</flux:button>
             </div>
         </div>
     </flux:modal>
 
     <!-- Modal Detail / Fill -->
-    @if ($activeOpname)
-        <flux:modal wire:model="showDetailModal" class="md:w-[800px]">
+    <flux:modal name="detail-opname-modal" class="w-full max-w-4xl">
+        @if ($activeOpname)
             <div class="space-y-6">
                 <div class="flex justify-between items-start">
                     <div>
@@ -276,8 +276,9 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                 </div>
 
                 <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                    <flux:button variant="ghost" class="w-full md:w-auto" wire:click="$set('showDetailModal', false)">Tutup
-                    </flux:button>
+                    <flux:modal.close>
+                        <flux:button variant="ghost" class="w-full md:w-auto">Tutup</flux:button>
+                    </flux:modal.close>
                     @if ($activeOpname->status === 'DRAFT')
                         <flux:button variant="primary" class="w-full md:w-auto"
                             wire:confirm="Finalisasi stok opname akan mengubah seluruh stok sistem. Lanjutkan?"
@@ -285,6 +286,6 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                     @endif
                 </div>
             </div>
-        </flux:modal>
-    @endif
+        @endif
+    </flux:modal>
 </div>

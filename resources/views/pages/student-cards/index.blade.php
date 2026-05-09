@@ -134,10 +134,10 @@ new #[Lazy] class extends Component {
 
 <div class="w-full">
     <div class="relative mb-6 w-full">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col items-start gap-4">
             <div>
-                <flux:heading size="xl" level="1">Kartu Santri</flux:heading>
-                <flux:subheading size="lg" class="mb-6">Kelola dan ajukan pencetakan kartu santri</flux:subheading>
+                <flux:heading size="xl" level="1">{{ __('Kartu Santri') }}</flux:heading>
+                <flux:subheading size="lg">{{ __('Kelola dan ajukan pencetakan kartu santri') }}</flux:subheading>
             </div>
             <flux:button variant="filled" icon="printer" wire:click="openBulkRequestModal">
                 {{ __('Ajukan Cetak Massal') }}
@@ -237,7 +237,7 @@ new #[Lazy] class extends Component {
     </flux:table>
 
     <!-- Bulk Request Modal -->
-    <flux:modal name="bulk-request-modal" class="min-w-[25rem]">
+    <flux:modal name="bulk-request-modal" class="w-full max-w-md">
         <div class="space-y-6">
             <div>
                 <flux:heading size="lg">Ajukan Cetak Massal?</flux:heading>

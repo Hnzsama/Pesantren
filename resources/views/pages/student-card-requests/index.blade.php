@@ -104,14 +104,12 @@ new #[Lazy] class extends Component {
 
 <div class="w-full">
     <div class="relative mb-6 w-full">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col items-start gap-4">
             <div>
                 <flux:heading size="xl" level="1">Permintaan Cetak Kartu</flux:heading>
-                <flux:subheading size="lg" class="mb-6">Kelola permintaan pencetakan kartu santri dari semua sekolah
+                <flux:subheading size="lg">Kelola permintaan pencetakan kartu santri dari semua sekolah
                 </flux:subheading>
             </div>
-            
-
         </div>
         <flux:separator variant="subtle" />
     </div>
@@ -217,7 +215,7 @@ new #[Lazy] class extends Component {
     </flux:table>
 
     <!-- Confirm Print Modal -->
-    <flux:modal name="confirm-print-modal" class="min-w-[22rem]">
+    <flux:modal name="confirm-print-modal" class="w-full max-w-sm">
         <div class="space-y-6">
             <div>
                 <flux:heading size="lg">Konfirmasi Cetak Selesai?</flux:heading>

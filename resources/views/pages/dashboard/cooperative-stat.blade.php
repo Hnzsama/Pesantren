@@ -51,7 +51,9 @@ new #[Lazy] #[Layout('layouts.app')] #[Title('Dashboard')] class extends Compone
 
     public function with(): array
     {
-        $schoolId = auth()->user()->school_id;
+        $user = auth()->user();
+        $schoolId = $user->school_id;
+        $isCashier = $user->hasRole('kasir');
 
         $start = now()->startOfDay();
         $end = now()->endOfDay();
@@ -65,48 +67,41 @@ new #[Lazy] #[Layout('layouts.app')] #[Title('Dashboard')] class extends Compone
             $end = $this->dateTo ? Carbon::parse($this->dateTo)->endOfDay() : now()->endOfDay();
         }
 
-        // Stats based on filter
-        $salesPeriod = WalletTransaction::where('school_id', $schoolId)
+        $baseQuery = WalletTransaction::where('school_id', $schoolId)
             ->where('category', 'PURCHASE')
             ->where('status', 'PAID')
+            ->when($isCashier, fn($q) => $q->where('operator_id', $user->id));
+
+        // Stats based on filter
+        $salesPeriod = (clone $baseQuery)
             ->whereBetween('created_at', [$start, $end])
             ->sum('amount');
 
-        $countPeriod = WalletTransaction::where('school_id', $schoolId)
-            ->where('category', 'PURCHASE')
-            ->where('status', 'PAID')
+        $countPeriod = (clone $baseQuery)
             ->whereBetween('created_at', [$start, $end])
             ->count();
 
-        $activeStudentsCount = WalletTransaction::where('school_id', $schoolId)
-            ->where('category', 'PURCHASE')
-            ->where('status', 'PAID')
+        $activeStudentsCount = (clone $baseQuery)
             ->whereBetween('created_at', [$start, $end])
             ->distinct('student_id')
             ->count('student_id');
 
         // Stats This Month
-        $salesMonth = WalletTransaction::where('school_id', $schoolId)
-            ->where('category', 'PURCHASE')
-            ->where('status', 'PAID')
+        $salesMonth = (clone $baseQuery)
             ->whereMonth('created_at', Carbon::now()->month)
             ->whereYear('created_at', Carbon::now()->year)
             ->sum('amount');
 
         // Recent 5 Transactions
-        $recentPurchases = WalletTransaction::with('student')
-            ->where('school_id', $schoolId)
-            ->where('category', 'PURCHASE')
-            ->where('status', 'PAID')
+        $recentPurchases = (clone $baseQuery)
+            ->with('student')
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
 
         // Trend Sales (Last 30 Days)
         $days = 30;
-        $trendData = WalletTransaction::where('school_id', $schoolId)
-            ->where('category', 'PURCHASE')
-            ->where('status', 'PAID')
+        $trendData = (clone $baseQuery)
             ->where('created_at', '>=', now()->subDays($days))
             ->groupBy(DB::raw('DATE(created_at)'))
             ->orderBy(DB::raw('DATE(created_at)'))
@@ -140,7 +135,7 @@ new #[Lazy] #[Layout('layouts.app')] #[Title('Dashboard')] class extends Compone
                 'this_month' => 'Bulan Ini',
                 'custom' => 'Rentang Kustom',
                 default => 'Hari Ini'
-        },
+            },
         ];
     }
 }; ?>
@@ -351,8 +346,12 @@ new #[Lazy] #[Layout('layouts.app')] #[Title('Dashboard')] class extends Compone
                         </flux:table.cell>
                         <flux:table.cell>
                             <div class="flex flex-col">
-                                <span class="font-medium">{{ $purchase->student->full_name }}</span>
-                                <span class="text-xs text-zinc-500">{{ $purchase->student->nis }}</span>
+                                @if($purchase->student)
+                                    <span class="font-medium">{{ $purchase->student->full_name }}</span>
+                                    <span class="text-xs text-zinc-500">{{ $purchase->student->nis }}</span>
+                                @else
+                                    <span class="font-medium text-zinc-400 italic">PELANGGAN UMUM</span>
+                                @endif
                             </div>
                         </flux:table.cell>
                         <flux:table.cell class="font-bold text-red-600 dark:text-red-400">

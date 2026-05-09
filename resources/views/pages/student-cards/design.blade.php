@@ -366,7 +366,7 @@ new #[Lazy] class extends Component {
     </style>
 
     <!-- Batch Download Modal -->
-    <flux:modal name="batch-download-modal" class="min-w-[30rem]" :dismissible="false">
+    <flux:modal name="batch-download-modal" class="w-full max-w-lg" :dismissible="false">
         <div class="space-y-6" x-data="{
             progress: 0,
             total: @entangle('processingTotal'),

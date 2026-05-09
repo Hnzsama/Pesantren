@@ -341,12 +341,12 @@ new #[Lazy] class extends Component {
 
     {{-- Withdrawals Table --}}
     <flux:card class="space-y-6">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <flux:heading size="lg">Daftar Penarikan</flux:heading>
 
-            <div class="flex items-center gap-2">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                 <flux:select wire:model.live="selectedSchool" variant="listbox" searchable
-                    placeholder="Filter Pesantren" class="min-w-[200px]">
+                    placeholder="Filter Pesantren" class="w-full sm:min-w-[200px]">
                     <flux:select.option value="">Semua Sekolah</flux:select.option>
                     @foreach($this->schools as $school)
                         <flux:select.option value="{{ $school->id }}">{{ $school->name }}</flux:select.option>
@@ -354,7 +354,7 @@ new #[Lazy] class extends Component {
                 </flux:select>
 
                 <flux:select wire:model.live="selectedStatus" variant="listbox" placeholder="Filter Status"
-                    class="w-48">
+                    class="w-full sm:w-48">
                     <flux:select.option value="">Semua Status</flux:select.option>
                     <flux:select.option value="REQUESTED">Menunggu Persetujuan</flux:select.option>
                     <flux:select.option value="APPROVED">Disetujui</flux:select.option>

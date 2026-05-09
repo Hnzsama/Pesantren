@@ -118,13 +118,7 @@ new #[Lazy] class extends Component {
     // Calculate current balance and daily limit
     private function calculateBalance()
     {
-        $this->studentBalance = WalletTransaction::where('student_id', $this->student->id)
-            ->where('status', 'PAID')
-            ->selectRaw('
-                COALESCE(SUM(CASE WHEN type = "CREDIT" THEN amount ELSE 0 END), 0) -
-                COALESCE(SUM(CASE WHEN type = "DEBIT" THEN amount ELSE 0 END), 0) as balance
-            ')
-            ->value('balance') ?? 0;
+        $this->studentBalance = $this->student->wallet_balance;
 
         $this->todayWithdrawals = WalletTransaction::where('student_id', $this->student->id)
             ->where('category', 'WITHDRAWAL')
@@ -134,20 +128,6 @@ new #[Lazy] class extends Component {
 
         $this->remainingLimit = $this->student->daily_cash_limit - $this->todayWithdrawals;
 
-        // WALLET B PROTECTION: Calculate net trust fund cash available
-        $totalTopUp = WalletTransaction::where('school_id', $this->schoolId)
-            ->where('type', 'CREDIT')
-            ->where('category', 'TOPUP')
-            ->where('status', 'PAID')
-            ->sum('amount');
-
-        $totalWithdrawnSantri = WalletTransaction::where('school_id', $this->schoolId)
-            ->where('type', 'DEBIT')
-            ->where('category', 'WITHDRAWAL')
-            ->where('status', 'PAID')
-            ->sum('amount');
-
-        $this->trustFundPool = $totalTopUp - $totalWithdrawnSantri;
     }
 
     // Process withdrawal
@@ -175,17 +155,10 @@ new #[Lazy] class extends Component {
                     abort(403, 'Unauthorized: Cross-school access detected');
                 }
 
-                // CRITICAL: Strict Wallet B check (Trust Fund liquidity)
-                if ($this->amount > $this->trustFundPool) {
+                // Validate amount against balance (Min 10.000 must remain)
+                if (($this->studentBalance - $this->amount) < 10000) {
                     throw ValidationException::withMessages([
-                        'amount' => 'Kas dana titipan tidak mencukupi untuk penarikan tunai ini.',
-                    ]);
-                }
-
-                // Validate amount against balance
-                if ($this->amount > $this->studentBalance) {
-                    throw ValidationException::withMessages([
-                        'amount' => 'Saldo tidak mencukupi. Saldo: Rp ' . number_format($this->studentBalance, 0, ',', '.'),
+                        'amount' => 'Saldo minimal Rp 10.000 harus tersisa. Maksimal penarikan: Rp ' . number_format(max(0, $this->studentBalance - 10000), 0, ',', '.'),
                     ]);
                 }
 
@@ -219,6 +192,9 @@ new #[Lazy] class extends Component {
                     'admin_fee' => 0,
                     'payment_fee' => 0,
                 ]);
+
+                // CRITICAL: Actually deduct the student's wallet balance
+                $this->student->decrement('wallet_balance', $this->amount);
             });
 
             // Success message
@@ -325,18 +301,22 @@ new #[Lazy] class extends Component {
                 </div>
 
                 <!-- Balance & Limit -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                        <flux:subheading class="text-xs text-green-600 dark:text-green-400 mb-1">Saldo Wallet
-                        </flux:subheading>
-                        <flux:heading size="xl" class="text-green-600 dark:text-green-400">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-zinc-50 dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-100 dark:border-zinc-800">
+                        <flux:subheading class="text-[10px] uppercase tracking-widest mb-1">Total Saldo</flux:subheading>
+                        <flux:heading size="lg">
                             Rp {{ number_format($studentBalance, 0, ',', '.') }}
                         </flux:heading>
                     </div>
-                    <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                        <flux:subheading class="text-xs text-blue-600 dark:text-blue-400 mb-1">Sisa Limit Harian
-                        </flux:subheading>
-                        <flux:heading size="xl" class="text-blue-600 dark:text-blue-400">
+                    <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-2xl border border-green-100 dark:border-green-900/30">
+                        <flux:subheading class="text-[10px] uppercase tracking-widest text-green-600 dark:text-green-400 mb-1">Dapat Ditarik</flux:subheading>
+                        <flux:heading size="lg" class="text-green-600 dark:text-green-400">
+                            Rp {{ number_format(max(0, $studentBalance - 10000), 0, ',', '.') }}
+                        </flux:heading>
+                    </div>
+                    <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/30">
+                        <flux:subheading class="text-[10px] uppercase tracking-widest text-blue-600 dark:text-blue-400 mb-1">Sisa Limit Hari Ini</flux:subheading>
+                        <flux:heading size="lg" class="text-blue-600 dark:text-blue-400">
                             Rp {{ number_format($remainingLimit, 0, ',', '.') }}
                         </flux:heading>
                     </div>
@@ -387,12 +367,13 @@ new #[Lazy] class extends Component {
 
                     <!-- PIN Input -->
                     <flux:field>
-                        <flux:label>PIN Santri <span class="text-red-500">*</span></flux:label>
-                        <flux:input wire:model="pin" type="password" placeholder="Minta santri input PIN" maxlength="6"
-                            inputmode="numeric" />
+                        <flux:label class="justify-center uppercase tracking-widest text-[10px] font-black text-accent">MASUKKAN PIN KEAMANAN <span class="text-red-500">*</span></flux:label>
+                        <div class="flex justify-center py-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-3xl border-2 border-accent/10 my-2">
+                            <flux:otp wire:model="pin" private length="6" />
+                        </div>
                         <flux:error name="pin" />
-                        <flux:description class="text-amber-600 dark:text-amber-400">
-                            ⚠️ Jangan lihat saat santri mengetik PIN
+                        <flux:description class="text-amber-600 dark:text-amber-400 text-center text-[10px] font-medium uppercase tracking-wider">
+                            ⚠️ Admin dilarang melihat saat santri menginput PIN
                         </flux:description>
                     </flux:field>
 

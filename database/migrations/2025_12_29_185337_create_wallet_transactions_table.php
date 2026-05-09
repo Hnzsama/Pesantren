@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignUlid('school_id')->constrained()->cascadeOnDelete();
             $table->string('invoice_code')->unique();
             $table->foreignUlid('student_id')->nullable()->constrained('students')->cascadeOnDelete();
+            $table->foreignUlid('product_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignUlid('operator_id')->nullable()->constrained('users');
             $table->foreignUlid('pic_user_id')->constrained('users')->cascadeOnDelete();
             $table->enum('type', ['CREDIT', 'DEBIT']);

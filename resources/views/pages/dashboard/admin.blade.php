@@ -755,11 +755,11 @@ new #[Lazy] class extends Component
                                 {{ $trx->flow_type === 'IN' ? '+' : '-' }} Rp {{ number_format($trx->amount, 0, ',', '.') }}
                             </span>
                         </flux:table.cell>
-                        <flux:table.cell align="right" class="text-xs text-zinc-500">
-                            {{ $trx->admin_fee > 0 ? number_format($trx->admin_fee, 0, ',', '.') : '-' }}
+                        <flux:table.cell align="right" class="text-xs text-zinc-500 tabular-nums whitespace-nowrap">
+                            Rp {{ number_format($trx->admin_fee, 0, ',', '.') }}
                         </flux:table.cell>
-                        <flux:table.cell align="right" class="text-xs text-zinc-500">
-                            {{ $trx->payment_fee > 0 ? number_format($trx->payment_fee, 0, ',', '.') : '-' }}
+                        <flux:table.cell align="right" class="text-xs text-zinc-500 tabular-nums whitespace-nowrap">
+                            Rp {{ number_format($trx->payment_fee, 0, ',', '.') }}
                         </flux:table.cell>
                         <flux:table.cell>
                             @php

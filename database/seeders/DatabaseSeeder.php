@@ -38,6 +38,9 @@ class DatabaseSeeder extends Seeder
             BillSeeder::class,
             WalletTransactionSeeder::class,
             FeedbackSeeder::class,
+
+            // Cooperative
+            ProductSeeder::class,
         ]);
     }
 }

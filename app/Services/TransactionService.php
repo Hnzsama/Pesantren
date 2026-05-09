@@ -220,26 +220,39 @@ class TransactionService
      * 
      * @throws \Exception
      */
-    public function processPurchase(Student $student, float $amount, string $pin, User $operator, array $items = []): WalletTransaction
+    public function processPurchase(?Student $student, float $amount, ?string $pin, User $operator, array $items = [], string $paymentMethod = 'wallet'): WalletTransaction
     {
-        return DB::transaction(function () use ($student, $amount, $pin, $operator, $items) {
-            // 1. Basic Validations
-            if (!$student->allow_transaction) {
-                throw new \Exception('Transaksi diblokir. Hubungi admin untuk aktivasi akun.');
+        return DB::transaction(function () use ($student, $amount, $pin, $operator, $items, $paymentMethod) {
+            // 1. Validations if student is provided
+            if ($student) {
+                if (!$student->allow_transaction) {
+                    throw new \Exception('Transaksi diblokir. Hubungi admin untuk aktivasi akun.');
+                }
+
+                // PIN check only if using wallet
+                if ($paymentMethod === 'wallet') {
+                    if (!$student->wallet_pin) {
+                        throw new \Exception('PIN belum diatur. Silakan hubungi admin untuk setup PIN.');
+                    }
+
+                    if (!Hash::check($pin, $student->wallet_pin)) {
+                        throw new \Exception('PIN salah. Periksa kembali PIN Anda.');
+                    }
+
+                    if (($student->wallet_balance - $amount) < 10000) {
+                        throw new \Exception('Saldo minimal Rp 10.000 harus tersisa di dompet. Saldo tersedia: Rp ' . number_format(max(0, $student->wallet_balance - 10000), 0, ',', '.'));
+                    }
+                }
+            } else {
+                // If no student, must use cash
+                if ($paymentMethod === 'wallet') {
+                    throw new \Exception('Pembayaran dompet hanya untuk santri terdaftar.');
+                }
             }
 
-            // 2. Verify PIN
-            if (!$student->wallet_pin) {
-                throw new \Exception('PIN belum diatur. Silakan hubungi admin untuk setup PIN.');
-            }
-
-            if (!Hash::check($pin, $student->wallet_pin)) {
-                throw new \Exception('PIN salah. Periksa kembali PIN Anda.');
-            }
-
-            // 3. Balance Check
-            if ($student->wallet_balance < $amount) {
-                throw new \Exception('Saldo tidak cukup. Saldo Anda: Rp ' . number_format($student->wallet_balance, 0, ',', '.'));
+            // 3. Balance Check (Global)
+            if ($amount <= 0) {
+                throw new \Exception('Total transaksi tidak boleh 0.');
             }
 
             // 4. Stock Check (If items provided)
@@ -258,23 +271,25 @@ class TransactionService
                 }
             }
 
-            // 5. Processing - Decrement Balance
-            $student->decrement('wallet_balance', $amount);
+            // 5. Processing - Decrement Balance (Only if wallet)
+            if ($student && $paymentMethod === 'wallet') {
+                $student->decrement('wallet_balance', $amount);
+            }
 
             // 6. Create Transaction
             $transaction = WalletTransaction::create([
-                'school_id' => $student->school_id,
+                'school_id' => $operator->school_id,
                 'invoice_code' => 'PURC-' . strtoupper(uniqid()),
-                'student_id' => $student->id,
+                'student_id' => $student?->id,
                 'pic_user_id' => $operator->id,
                 'operator_id' => $operator->id,
                 'type' => 'DEBIT',
                 'category' => 'PURCHASE',
                 'amount' => $amount,
-                'payment_method' => 'cash',
+                'payment_method' => $paymentMethod,
                 'status' => 'PAID',
-                'description' => 'Pembelian Koperasi - Kasir: ' . $operator->name,
-                'product_id' => count($items) === 1 ? $items[0]['product_id'] : null, // Set for single items
+                'description' => ($student ? 'Pembelian Koperasi (' . $paymentMethod . ')' : 'Pembelian Umum (Tunai)') . ' - Kasir: ' . $operator->name,
+                'product_id' => count($items) === 1 ? $items[0]['product_id'] : null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -287,8 +302,8 @@ class TransactionService
                     'product_id' => $product->id,
                     'product_name' => $product->name,
                     'quantity' => $itemData['quantity'],
-                    'price' => $product->price,
-                    'subtotal' => $product->price * $itemData['quantity'],
+                    'price' => $product->selling_price,
+                    'subtotal' => $product->selling_price * $itemData['quantity'],
                 ]);
             }
 

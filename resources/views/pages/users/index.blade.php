@@ -47,7 +47,7 @@ new #[Lazy] class extends Component {
         $query = User::query()
             ->with(['school', 'roles'])
             ->whereHas('roles', function ($q) {
-                $q->whereIn('name', ['admin', 'admin_koperasi']);
+                $q->whereIn('name', ['admin', 'admin_koperasi', 'kasir']);
             })
             ->when($this->search, fn($q) => $q->where('name', 'like', '%' . $this->search . '%'))
             ->when($this->roleFilter, fn($q) => $q->whereHas('roles', fn($r) => $r->where('name', $this->roleFilter)));
@@ -59,9 +59,8 @@ new #[Lazy] class extends Component {
         }
 
         return [
-            'users' => $query->paginate(10),
             'schools' => auth()->user()->hasRole('super_admin') ? School::all() : [],
-            'roles' => Role::whereIn('name', ['admin', 'admin_koperasi'])->get(),
+            'roles' => Role::whereIn('name', ['admin', 'admin_koperasi', 'kasir'])->get(),
         ];
     }
 
@@ -99,7 +98,7 @@ new #[Lazy] class extends Component {
                 $user->assignRole($this->role);
 
                 // Send email notification for administrative roles
-                if (in_array($this->role, ['admin', 'admin_koperasi'])) {
+                if (in_array($this->role, ['admin', 'admin_koperasi', 'kasir'])) {
                     $user->notify(new AdminCreatedNotification($this->password));
                 }
 
@@ -211,10 +210,10 @@ new #[Lazy] class extends Component {
 
 <div class="w-full">
     <div class="relative mb-6 w-full">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col items-start gap-4">
             <div>
                 <flux:heading size="xl" level="1">{{ __('Pengguna') }}</flux:heading>
-                <flux:subheading size="lg" class="mb-6">{{ __('Kelola pengguna sekolah dan koperasi') }}
+                <flux:subheading size="lg">{{ __('Kelola pengguna sekolah dan koperasi') }}
                 </flux:subheading>
             </div>
             <flux:modal.trigger name="user-modal">
@@ -273,7 +272,7 @@ new #[Lazy] class extends Component {
                         <div class="flex gap-2">
                             <flux:button variant="ghost" size="sm" icon="pencil" wire:click="edit('{{ $user->id }}')">Edit
                             </flux:button>
-                            @if(in_array($user->roles->first()?->name, ['admin', 'admin_koperasi']))
+                            @if(in_array($user->roles->first()?->name, ['admin', 'admin_koperasi', 'kasir']))
                                 <flux:button variant="ghost" size="sm" icon="paper-airplane"
                                     wire:click="confirmResendAccess('{{ $user->id }}')">Akses
                                 </flux:button>

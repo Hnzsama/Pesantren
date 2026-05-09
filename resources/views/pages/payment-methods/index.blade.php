@@ -66,9 +66,13 @@ new #[Lazy] class extends Component {
 }; ?>
 
 <div class="w-full space-y-8">
-    <div class="relative w-full">
-        <flux:heading size="xl" level="1">{{ __('Metode Pembayaran') }}</flux:heading>
-        <flux:subheading size="lg" class="mb-6">{{ __('Kelola metode pembayaran dan biaya layanan') }}</flux:subheading>
+    <div class="relative w-full mb-6">
+        <div class="flex flex-col items-start gap-4">
+            <div>
+                <flux:heading size="xl" level="1">{{ __('Metode Pembayaran') }}</flux:heading>
+                <flux:subheading size="lg">{{ __('Kelola metode pembayaran dan biaya layanan') }}</flux:subheading>
+            </div>
+        </div>
         <flux:separator variant="subtle" />
     </div>
 

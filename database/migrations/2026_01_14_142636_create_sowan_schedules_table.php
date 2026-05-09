@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('sowan_schedules', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->foreignUlid('school_id')->nullable()->constrained('schools')->cascadeOnDelete(); // Consolidation
+            $table->foreignUlid('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('guest_name');
             $table->dateTime('request_date');
             $table->text('topic');

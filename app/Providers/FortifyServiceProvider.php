@@ -34,7 +34,7 @@ class FortifyServiceProvider extends ServiceProvider
             $user = \App\Models\User::where('email', $request->email)->first();
 
             if ($user && \Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
-                if ($user->hasAnyRole(['super_admin', 'admin', 'admin_koperasi'])) {
+                if ($user->hasAnyRole(['super_admin', 'admin', 'admin_koperasi', 'kasir'])) {
                     return $user;
                 }
 

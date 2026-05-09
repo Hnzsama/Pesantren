@@ -61,8 +61,12 @@ new #[Lazy] class extends Component {
 
 <div class="w-full">
     <div class="relative mb-6 w-full">
-        <flux:heading size="xl" level="1">{{ __('Hak Akses') }}</flux:heading>
-        <flux:subheading size="lg" class="mb-6">{{ __('Daftar akses yang tersedia dalam sistem') }}</flux:subheading>
+        <div class="flex flex-col items-start gap-4">
+            <div>
+                <flux:heading size="xl" level="1">{{ __('Hak Akses') }}</flux:heading>
+                <flux:subheading size="lg">{{ __('Daftar akses yang tersedia dalam sistem') }}</flux:subheading>
+            </div>
+        </div>
         <flux:separator variant="subtle" />
     </div>
 

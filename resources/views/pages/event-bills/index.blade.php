@@ -108,10 +108,10 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
 
 <div class="w-full">
     <div class="relative mb-6 w-full">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col items-start gap-4">
             <div>
                 <flux:heading size="xl" level="1">{{ __('Tagihan Kegiatan') }}</flux:heading>
-                <flux:subheading size="lg" class="mb-6">{{ __('Kelola tagihan dari agenda/event sekolah') }}
+                <flux:subheading size="lg">{{ __('Kelola tagihan dari agenda/event sekolah') }}
                 </flux:subheading>
             </div>
             <!-- No Create Button here, Bills are created from Events Page -->

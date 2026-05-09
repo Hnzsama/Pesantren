@@ -181,10 +181,10 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
 
 <div class="w-full">
     <div class="relative mb-6 w-full">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col items-start gap-4">
             <div>
                 <flux:heading size="xl" level="1">Jadwal Sowan</flux:heading>
-                <flux:subheading size="lg" class="mb-6">Kelola jadwal tamu dan sowan pengasuh.</flux:subheading>
+                <flux:subheading size="lg">Kelola jadwal tamu dan sowan pengasuh.</flux:subheading>
             </div>
             <flux:button variant="primary" icon="plus" wire:click="create">Catat Jadwal</flux:button>
         </div>

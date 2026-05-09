@@ -16,6 +16,8 @@ class WalletTransaction extends Model
 
     const PAYMENT_METHOD_CASH = 'cash';
 
+    const PAYMENT_METHOD_WALLET = 'wallet';
+
     protected $fillable = [
         'school_id',
         'invoice_code',

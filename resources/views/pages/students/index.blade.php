@@ -340,16 +340,16 @@ new #[Lazy] class extends Component {
 
 <div class="w-full">
     <div class="relative mb-6 w-full">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col items-start gap-4">
             <div>
                 <flux:heading size="xl" level="1">{{ __('Santri') }}</flux:heading>
-                <flux:subheading size="lg" class="mb-6">{{ __('Kelola data santri sekolah') }}</flux:subheading>
+                <flux:subheading size="lg">{{ __('Kelola data santri, wali, dan akademik.') }}</flux:subheading>
             </div>
-            <div class="flex gap-2">
-                <flux:button variant="filled" icon="arrow-up-tray" href="{{ route('students.import') }}" wire:navigate>
+            <div class="flex flex-col sm:flex-row flex-wrap gap-2 w-full sm:w-auto">
+                <flux:button variant="ghost" icon="arrow-up-tray" href="{{ route('students.import') }}" wire:navigate>
                     {{ __('Import') }}
                 </flux:button>
-                <flux:button variant="filled" icon="credit-card" wire:click="openBulkGenerateModal">
+                <flux:button variant="ghost" icon="credit-card" wire:click="openBulkGenerateModal">
                     {{ __('Generate Kartu') }}
                 </flux:button>
 

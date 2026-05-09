@@ -140,10 +140,10 @@ new #[Lazy] class extends Component {
 
 <div class="w-full">
     <div class="relative mb-6 w-full">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col items-start gap-4">
             <div>
                 <flux:heading size="xl" level="1">{{ __('Transaksi Dompet') }}</flux:heading>
-                <flux:subheading size="lg" class="mb-6">{{ __('Riwayat transaksi dompet santri') }}</flux:subheading>
+                <flux:subheading size="lg">{{ __('Riwayat transaksi dompet santri') }}</flux:subheading>
             </div>
         </div>
         <flux:separator variant="subtle" />
@@ -238,15 +238,15 @@ new #[Lazy] class extends Component {
                                 </span>
                             </flux:table.cell>
 
-                            <flux:table.cell>
+                            <flux:table.cell class="tabular-nums">
                                 <span class="text-zinc-500 text-sm">
-                                    {{ $txn->admin_fee > 0 ? 'Rp ' . number_format($txn->admin_fee, 0, ',', '.') : '-' }}
+                                    Rp {{ number_format($txn->admin_fee, 0, ',', '.') }}
                                 </span>
                             </flux:table.cell>
 
-                            <flux:table.cell>
+                            <flux:table.cell class="tabular-nums">
                                 <span class="text-zinc-500 text-sm">
-                                    {{ $txn->payment_fee > 0 ? 'Rp ' . number_format($txn->payment_fee, 0, ',', '.') : '-' }}
+                                    Rp {{ number_format($txn->payment_fee, 0, ',', '.') }}
                                 </span>
                             </flux:table.cell>
 

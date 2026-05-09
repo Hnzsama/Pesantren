@@ -122,10 +122,10 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
 
 <div class="w-full">
     <div class="relative mb-6 w-full">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col items-start gap-4">
             <div>
-                <flux:heading size="xl" level="1">Kajian Video</flux:heading>
-                <flux:subheading size="lg" class="mb-6">Kumpulan dokumentasi kajian dan ceramah.</flux:subheading>
+                <flux:heading size="xl" level="1">Data Kajian Video</flux:heading>
+                <flux:subheading size="lg">Kelola konten kajian video untuk santri.</flux:subheading>
             </div>
             <flux:button variant="primary" icon="plus" wire:click="create">Tambah Kajian</flux:button>
         </div>

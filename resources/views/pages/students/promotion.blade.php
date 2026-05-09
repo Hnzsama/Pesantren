@@ -209,10 +209,10 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
 
 <div class="w-full">
     <div class="relative mb-6 w-full">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col items-start gap-4">
             <div>
                 <flux:heading size="xl" level="1">Kenaikan Kelas</flux:heading>
-                <flux:subheading size="lg" class="mb-6">Kelola promosi santri ke level berikutnya</flux:subheading>
+                <flux:subheading size="lg">Kelola promosi santri ke level berikutnya</flux:subheading>
             </div>
             <div class="flex gap-2">
                 <flux:button variant="ghost" icon="arrow-left" href="{{ route('students.index') }}" wire:navigate>

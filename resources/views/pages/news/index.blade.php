@@ -187,14 +187,14 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
 }; ?>
 
 <div class="w-full">
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex flex-col items-start gap-4 mb-6">
         <div>
             <flux:heading size="xl" level="1">Berita & Pengumuman</flux:heading>
             <flux:subheading size="lg">Kelola informasi untuk
                 {{ auth()->user()->hasRole('super_admin') ? 'Admin' : 'Wali Santri' }}.
             </flux:subheading>
         </div>
-        <flux:button variant="primary" icon="plus" wire:click="create">Tambah Berita</flux:button>
+        <flux:button variant="primary" icon="plus" wire:click="create" class="w-fit">Tambah Berita</flux:button>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

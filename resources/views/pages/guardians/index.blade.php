@@ -8,11 +8,13 @@ use Livewire\Attributes\Url;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\WithFileUploads;
 use App\Notifications\GuardianCreatedNotification;
 use Flux\Flux;
+use Illuminate\Support\Str;
 
 new #[Lazy] class extends Component {
-    use WithPagination;
+    use WithPagination, WithFileUploads;
 
     public function placeholder()
     {
@@ -63,6 +65,10 @@ new #[Lazy] class extends Component {
     public $userId = null;
     public $userIdToDelete = null;
     public $userIdToResend = null;
+
+    // Import properties
+    public $importFile;
+    public $import_school_id = '';
 
     public function with(): array
     {
@@ -186,19 +192,123 @@ new #[Lazy] class extends Component {
         $this->resetValidation();
         $this->modal('guardian-modal')->show();
     }
+
+    public function downloadTemplate()
+    {
+        $headers = [
+            'Content-type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename=template_wali_santri.csv',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $columns = ['Nama Lengkap', 'Email', 'Nomor Telepon'];
+
+        $callback = function() use ($columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+            fputcsv($file, ['Ahmad Soleh', 'ahmad@example.com', '08123456789']);
+            fputcsv($file, ['Siti Aminah', 'siti@example.com', '08987654321']);
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function import()
+    {
+        $this->validate([
+            'importFile' => 'required|file|mimes:csv,txt|max:2048',
+            'import_school_id' => auth()->user()->hasRole('super_admin') ? 'required|exists:schools,id' : 'nullable',
+        ], [
+            'importFile.required' => 'File CSV wajib diunggah.',
+            'importFile.mimes' => 'File harus berformat CSV.',
+            'import_school_id.required' => 'Sekolah wajib dipilih.'
+        ]);
+
+        $path = $this->importFile->getRealPath();
+        $file = fopen($path, 'r');
+        $header = fgetcsv($file);
+
+        if (!$header || count($header) < 3) {
+            Flux::toast(variant: 'danger', heading: 'Gagal', text: 'Format CSV tidak valid. Gunakan template yang disediakan.');
+            fclose($file);
+            return;
+        }
+
+        $importedCount = 0;
+        $failedCount = 0;
+        $schoolId = auth()->user()->hasRole('admin') ? auth()->user()->school_id : $this->import_school_id;
+
+        DB::beginTransaction();
+        try {
+            while (($row = fgetcsv($file)) !== false) {
+                if (count($row) < 3) continue;
+
+                $name = trim($row[0]);
+                $email = trim($row[1]);
+                $phone = trim($row[2]);
+
+                if (empty($name) || empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $failedCount++;
+                    continue;
+                }
+
+                // Check if email already exists
+                if (User::where('email', $email)->exists()) {
+                    $failedCount++;
+                    continue;
+                }
+
+                $password = Str::random(8);
+
+                $user = User::create([
+                    'name' => $name,
+                    'email' => $email,
+                    'phone_number' => $phone,
+                    'password' => bcrypt($password),
+                    'school_id' => $schoolId,
+                ]);
+
+                $user->assignRole('wali_santri');
+                $user->notify(new GuardianCreatedNotification($password));
+                $importedCount++;
+            }
+            DB::commit();
+
+            $message = "Berhasil mengimpor {$importedCount} data.";
+            if ($failedCount > 0) {
+                $message .= " Namun {$failedCount} baris gagal (email sudah ada atau format salah).";
+            }
+            
+            Flux::toast(variant: 'success', heading: 'Import Selesai', text: $message);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Flux::toast(variant: 'danger', heading: 'Gagal', text: 'Terjadi kesalahan saat memproses import.');
+        }
+
+        fclose($file);
+        $this->reset(['importFile', 'import_school_id']);
+        $this->modal('import-guardian-modal')->close();
+    }
 }; ?>
 
 <div class="w-full">
     <div class="relative mb-6 w-full">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col items-start gap-4">
             <div>
                 <flux:heading size="xl" level="1">{{ __('Wali Santri') }}</flux:heading>
-                <flux:subheading size="lg" class="mb-6">{{ __('Kelola data wali santri') }}
-                </flux:subheading>
+                <flux:subheading size="lg">{{ __('Kelola data wali santri') }}</flux:subheading>
             </div>
-            <flux:modal.trigger name="guardian-modal">
-                <flux:button variant="primary" icon="plus" wire:click="create">{{ __('Tambah Wali') }}</flux:button>
-            </flux:modal.trigger>
+            <div class="flex flex-col md:flex-row gap-2">
+                <flux:modal.trigger name="import-guardian-modal">
+                    <flux:button variant="subtle" icon="arrow-down-tray">{{ __('Import CSV') }}</flux:button>
+                </flux:modal.trigger>
+                <flux:modal.trigger name="guardian-modal">
+                    <flux:button variant="primary" icon="plus" wire:click="create">{{ __('Tambah Wali') }}</flux:button>
+                </flux:modal.trigger>
+            </div>
         </div>
         <flux:separator variant="subtle" />
     </div>
@@ -344,7 +454,7 @@ new #[Lazy] class extends Component {
         </form>
     </flux:modal>
 
-    <flux:modal name="delete-guardian-modal" class="min-w-[22rem]">
+    <flux:modal name="delete-guardian-modal" class="w-full max-w-sm">
         <div class="space-y-6">
             <div>
                 <flux:heading size="lg">Hapus Wali Santri?</flux:heading>
@@ -363,7 +473,7 @@ new #[Lazy] class extends Component {
         </div>
     </flux:modal>
 
-    <flux:modal name="resend-access-modal" class="min-w-[22rem]">
+    <flux:modal name="resend-access-modal" class="w-full max-w-sm">
         <div class="space-y-6">
             <div>
                 <flux:heading size="lg">Kirim Ulang Akses?</flux:heading>
@@ -381,5 +491,69 @@ new #[Lazy] class extends Component {
                 <flux:button wire:click="resendAccess" variant="primary">Kirim Akses Baru</flux:button>
             </div>
         </div>
+    </flux:modal>
+
+    <flux:modal name="import-guardian-modal" class="w-full max-w-lg">
+        <form wire:submit="import" class="space-y-6">
+            <div>
+                <flux:heading size="lg">Import Data Wali Santri</flux:heading>
+                <flux:subheading>
+                    Gunakan file berformat .csv untuk mengimpor data sekaligus secara masal.
+                </flux:subheading>
+            </div>
+
+            <div class="p-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-3">
+                <div class="flex items-center gap-2">
+                    <div class="p-2 bg-accent/10 rounded-lg">
+                        <flux:icon.table-cells class="w-5 h-5 text-accent" />
+                    </div>
+                    <div class="text-sm font-medium">Langkah 1: Siapkan Data</div>
+                </div>
+                <div class="text-sm text-zinc-500 pl-11">
+                    Pastikan susunan baris pertama terdiri dari header (bebas), lalu data berisi: <strong>Nama Lengkap, Email, Nomor Telepon</strong>. Email harus valid dan unik.
+                </div>
+                <div class="pl-11">
+                    <flux:button wire:click="downloadTemplate" variant="subtle" size="sm" icon="document-arrow-down">Unduh Template CSV</flux:button>
+                </div>
+            </div>
+
+            @role('super_admin')
+            <flux:field>
+                <flux:label badge="Required">Tujuan Sekolah</flux:label>
+                <flux:select wire:model="import_school_id" variant="combobox" placeholder="Pilih Sekolah">
+                    @foreach ($schools as $school)
+                        <flux:select.option value="{{ $school->id }}">{{ $school->name }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                <flux:error name="import_school_id" />
+            </flux:field>
+            @endrole
+
+            <flux:field>
+                <flux:label badge="Required">Pilih File CSV</flux:label>
+                <input type="file" wire:model="importFile" accept=".csv" 
+                       class="block w-full text-sm text-zinc-500
+                              file:mr-4 file:py-2 file:px-4
+                              file:rounded-full file:border-0
+                              file:text-sm file:font-semibold
+                              file:bg-accent/10 file:text-accent
+                              hover:file:bg-accent/20 cursor-pointer transition-colors" />
+                <flux:error name="importFile" />
+            </flux:field>
+
+            <div wire:loading wire:target="importFile" class="text-sm text-blue-500 font-medium">
+                Mengunggah dan bersiap membaca file...
+            </div>
+            <div wire:loading wire:target="import" class="text-sm text-blue-500 font-medium">
+                Sedang mengimpor data...
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <flux:modal.close>
+                    <flux:button variant="ghost">Batal</flux:button>
+                </flux:modal.close>
+                <flux:button type="submit" variant="primary" wire:loading.attr="disabled" wire:target="importFile, import">Mulai Import</flux:button>
+            </div>
+        </form>
     </flux:modal>
 </div>

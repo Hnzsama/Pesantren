@@ -131,10 +131,10 @@ new #[Lazy] class extends Component {
 
 <div class="w-full">
     <div class="relative mb-6 w-full">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col items-start gap-4">
             <div>
                 <flux:heading size="xl" level="1">{{ __('Kategori Tagihan') }}</flux:heading>
-                <flux:subheading size="lg" class="mb-6">{{ __('Kelola kategori untuk tagihan santri') }}
+                <flux:subheading size="lg">{{ __('Kelola kategori untuk tagihan santri') }}
                 </flux:subheading>
             </div>
             <flux:button variant="primary" icon="plus" wire:click="openCreateModal">{{ __('Tambah Kategori') }}

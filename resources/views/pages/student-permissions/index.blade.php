@@ -118,6 +118,11 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
         $schoolId = $user->hasRole('admin') ? $user->school_id : null;
         $student = Student::find($this->student_id);
 
+        if (!$student) {
+            Flux::toast(variant: 'danger', heading: 'Error', text: 'Data santri tidak ditemukan.');
+            return;
+        }
+
         if ($this->permissionId) {
             $permission = StudentPermission::find($this->permissionId);
             $permission->update([
@@ -177,10 +182,10 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
 
 <div class="w-full">
     <div class="relative mb-6 w-full">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col items-start gap-4">
             <div>
                 <flux:heading size="xl" level="1">Perizinan Santri</flux:heading>
-                <flux:subheading size="lg" class="mb-6">Kelola data perizinan pulang/sakit santri.</flux:subheading>
+                <flux:subheading size="lg">Kelola data perizinan pulang/sakit santri.</flux:subheading>
             </div>
             <flux:button variant="primary" icon="plus" wire:click="create">Tambah Izin</flux:button>
         </div>
@@ -275,12 +280,16 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
         <flux:separator />
 
         <div class="space-y-6">
-            <flux:select wire:model="student_id" label="Pilih Santri" placeholder="Cari santri..." :searchable="true">
-                @foreach($students as $student)
-                    <flux:select.option value="{{ $student->id }}">{{ $student->full_name }} ({{ $student->nis }})
-                    </flux:select.option>
-                @endforeach
-            </flux:select>
+            <flux:field>
+                <flux:label>Pilih Santri</flux:label>
+                <flux:select wire:model="student_id" variant="combobox" placeholder="Cari santri...">
+                    @foreach($students as $student)
+                        <flux:select.option value="{{ $student->id }}">{{ $student->full_name }} ({{ $student->nis }})
+                        </flux:select.option>
+                    @endforeach
+                </flux:select>
+                <flux:error name="student_id" />
+            </flux:field>
 
             <div class="grid grid-cols-2 gap-4">
                 <flux:input type="date" wire:model="start_date" label="Tanggal Mulai" />

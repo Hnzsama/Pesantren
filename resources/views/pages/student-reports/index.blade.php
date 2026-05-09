@@ -95,10 +95,10 @@ new #[Lazy] class extends Component {
 
 <div class="w-full">
     <div class="relative mb-6 w-full">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col items-start gap-4">
             <div>
                 <flux:heading size="xl" level="1">Rapor Santri</flux:heading>
-                <flux:subheading size="lg" class="mb-6">Kelola data rapor hasil belajar santri.</flux:subheading>
+                <flux:subheading size="lg">Kelola data rapor hasil belajar santri.</flux:subheading>
             </div>
             <flux:button variant="primary" icon="plus" href="{{ route('student-reports.create') }}" wire:navigate>Tambah
                 Rapor</flux:button>

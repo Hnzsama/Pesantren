@@ -43,8 +43,13 @@ class FinancialService
         // Or invalidation on transaction? For now, short TTL.
         return Cache::remember('finance.cash_on_hand.' . $schoolId, 60, function () use ($schoolId) {
             $totalCashCredits = WalletTransaction::where('school_id', $schoolId)
-                ->cash()
+                ->where('payment_method', 'cash')
                 ->where('type', 'CREDIT') // Topups
+                ->sum('amount');
+
+            $totalCashSales = WalletTransaction::where('school_id', $schoolId)
+                ->where('payment_method', 'cash')
+                ->where('category', 'PURCHASE')
                 ->sum('amount');
 
             $totalManualBillPayments = Bill::where('school_id', $schoolId)
@@ -52,10 +57,11 @@ class FinancialService
                 ->where('payment_method', 'MANUAL')
                 ->sum('amount');
 
-            $totalCashCredits += $totalManualBillPayments;
+            $totalCashCredits += $totalManualBillPayments + $totalCashSales;
 
             $totalCashDebits = WalletTransaction::where('school_id', $schoolId)
-                ->cash()
+                ->where('payment_method', 'cash')
+                ->where('category', 'WITHDRAWAL')
                 ->where('type', 'DEBIT') // Withdrawals
                 ->sum('amount');
 
@@ -128,13 +134,20 @@ class FinancialService
         return Cache::remember('finance.risk.cash_at_agents.' . ($schoolId ?? 'global'), 120, function () use ($schoolId) {
             $cashCredits = WalletTransaction::query()
                 ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
-                ->cash()
+                ->where('payment_method', 'cash')
                 ->where('type', 'CREDIT')
+                ->sum('amount');
+
+            $cashSales = WalletTransaction::query()
+                ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
+                ->where('payment_method', 'cash')
+                ->where('category', 'PURCHASE')
                 ->sum('amount');
 
             $cashDebits = WalletTransaction::query()
                 ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
-                ->cash()
+                ->where('payment_method', 'cash')
+                ->where('category', 'WITHDRAWAL')
                 ->where('type', 'DEBIT')
                 ->sum('amount');
 
@@ -149,7 +162,7 @@ class FinancialService
                 ->where('payment_method', 'MANUAL')
                 ->sum('amount');
 
-            return ($cashCredits + $manualBillRevenue) - $cashDebits - $confirmedDeposits;
+            return ($cashCredits + $manualBillRevenue + $cashSales) - $cashDebits - $confirmedDeposits;
         });
     }
 
@@ -231,8 +244,8 @@ class FinancialService
         // Cache for 1-2 minutes. "Today" changes as new tx come in.
         return Cache::remember('finance.cash_today.' . $schoolId, 60, function () use ($schoolId) {
             $walletCash = WalletTransaction::where('school_id', $schoolId)
-                ->cash()
-                ->where('type', 'CREDIT')
+                ->where('payment_method', 'cash')
+                ->whereIn('category', ['TOPUP', 'PURCHASE'])
                 ->whereDate('created_at', today())
                 ->sum('amount');
 
@@ -253,8 +266,8 @@ class FinancialService
     {
         return Cache::remember('finance.cash_month.' . $schoolId, 300, function () use ($schoolId) {
             $walletCash = WalletTransaction::where('school_id', $schoolId)
-                ->cash()
-                ->where('type', 'CREDIT')
+                ->where('payment_method', 'cash')
+                ->whereIn('category', ['TOPUP', 'PURCHASE'])
                 ->whereYear('created_at', now()->year)
                 ->whereMonth('created_at', now()->month)
                 ->sum('amount');
@@ -294,9 +307,8 @@ class FinancialService
             $totalCashIn = WalletTransaction::query()
                 ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
                 ->when($startDate && $endDate, fn ($q) => $q->whereBetween('created_at', [$startDate, $endDate]))
-                ->where('category', 'TOPUP')
-                ->where('type', 'CREDIT')
                 ->where('payment_method', 'cash')
+                ->whereIn('category', ['TOPUP', 'PURCHASE'])
                 ->sum('amount');
 
             // Cash from Manual Bill Payments
