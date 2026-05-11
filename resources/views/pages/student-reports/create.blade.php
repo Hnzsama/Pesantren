@@ -56,7 +56,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
     {
         $user = auth()->user();
 
-        if ($user->hasRole('admin') && $user->school_id) {
+        if ($user->hasAnyRole(['admin', 'guru']) && $user->school_id) {
             $this->school_id = $user->school_id;
         }
 

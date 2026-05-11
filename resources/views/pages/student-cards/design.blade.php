@@ -67,7 +67,7 @@ new #[Lazy] class extends Component {
 
         $school = School::find($this->schoolFilter);
         if ($school && $school->logo_path) {
-            $fullPath = storage_path('app/public/' . $school->logo_path);
+            $fullPath = public_path('storage/public/' . $school->logo_path);
             if (file_exists($fullPath)) {
                 $type = pathinfo($fullPath, PATHINFO_EXTENSION);
                 $data = file_get_contents($fullPath);
@@ -279,7 +279,7 @@ new #[Lazy] class extends Component {
 
                             if (!$this->cachedLogo && $previewCard->student->school->logo_path) {
                                 $logoPath = $previewCard->student->school->logo_path;
-                                $fullPath = storage_path('app/public/' . $logoPath);
+                                $fullPath = public_path('storage/public/' . $logoPath);
                                 if (file_exists($fullPath)) {
                                     $type = pathinfo($fullPath, PATHINFO_EXTENSION);
                                     $data = file_get_contents($fullPath);

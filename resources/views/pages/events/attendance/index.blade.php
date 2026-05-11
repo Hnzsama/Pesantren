@@ -1,6 +1,9 @@
 <?php
 
 use App\Models\Event;
+use App\Models\Student;
+use App\Models\StudentPermission;
+use App\Models\EventAttendance;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
@@ -49,7 +52,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
     public function with(): array
     {
         $user = auth()->user();
-        $schoolId = $user->hasRole('admin') ? $user->school_id : null;
+        $schoolId = $user->hasAnyRole(['admin', 'guru']) ? $user->school_id : null;
 
         $events = Event::query()
             ->withCount('attendances')
@@ -70,12 +73,43 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
     public function viewAttendees($eventId)
     {
         $this->selectedEvent = Event::find($eventId);
-        $this->attendees = \App\Models\EventAttendance::query()
-            ->with(['student.level'])
-            ->where('event_id', $eventId)
-            ->where('status', 'present')
-            ->orderByDesc('check_in_time')
+        $date = $this->selectedEvent->event_date;
+        
+        // Get students for this event's levels
+        $levelIds = $this->selectedEvent->levels->pluck('id');
+        $students = Student::whereIn('level_id', $levelIds)
+            ->where('school_id', $this->selectedEvent->school_id)
+            ->where('status', 'ACTIVE')
             ->get();
+
+        // Get existing attendance
+        $attendance = \App\Models\EventAttendance::where('event_id', $eventId)->get()->keyBy('student_id');
+
+        $this->attendees = collect();
+
+        foreach ($students as $student) {
+            $record = $attendance->get($student->id);
+            if ($record) {
+                $this->attendees->push($record);
+            } else {
+                // Check for automatic permission
+                $hasPermission = \App\Models\StudentPermission::where('student_id', $student->id)
+                    ->where('status', 'approved')
+                    ->whereDate('start_date', '<=', $date)
+                    ->whereDate('end_date', '>=', $date)
+                    ->exists();
+
+                if ($hasPermission) {
+                    $this->attendees->push((object)[
+                        'student' => $student,
+                        'status' => 'IZIN',
+                        'check_in_time' => null,
+                    ]);
+                }
+            }
+        }
+
+        $this->attendees = $this->attendees->sortBy('student.full_name');
 
         $this->modal('event-detail-modal')->show();
     }
@@ -194,8 +228,8 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                                         <div class="text-xs text-zinc-500">{{ $attendance->student->level->name ?? '-' }}</div>
                                     </flux:table.cell>
                                     <flux:table.cell>
-                                        <flux:badge size="sm" color="green">
-                                            {{ $attendance->check_in_time ? $attendance->check_in_time->format('H:i') : '-' }}
+                                        <flux:badge size="sm" :color="$attendance->status === 'IZIN' ? 'orange' : 'green'">
+                                            {{ $attendance->status === 'IZIN' ? 'Izin' : ($attendance->check_in_time ? $attendance->check_in_time->format('H:i') : 'Hadir') }}
                                         </flux:badge>
                                     </flux:table.cell>
                                 </flux:table.row>

@@ -77,7 +77,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component
     public function availableEvents()
     {
         $user = auth()->user();
-        $schoolId = $user->hasRole('admin') ? $user->school_id : null;
+        $schoolId = $user->hasAnyRole(['admin', 'guru']) ? $user->school_id : null;
 
         return Event::query()
             ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
@@ -90,7 +90,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component
     public function students()
     {
         $user = auth()->user();
-        $schoolId = $user->hasRole('admin') ? $user->school_id : null;
+        $schoolId = $user->hasAnyRole(['admin', 'guru']) ? $user->school_id : null;
 
         return Student::query()
             ->with('level')
@@ -217,20 +217,20 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component
                                 <flux:button wire:click="setStatus('{{ $student->id }}', 'present')" size="sm"
                                     :variant="$status === 'present' ? 'primary' : 'ghost'" color="green" icon="check-circle"
                                     :class="$status === 'present' ? '' : 'text-green-600 dark:text-green-400'" title="Hadir"
-                                    class="!px-2" />
+                                    class="!px-2" :disabled="auth()->user()->hasRole('guru')" />
 
                                 {{-- Izin --}}
                                 <flux:button wire:click="setStatus('{{ $student->id }}', 'permission')" size="sm"
                                     :variant="$status === 'permission' ? 'primary' : 'ghost'" color="orange"
                                     icon="information-circle"
                                     :class="$status === 'permission' ? '' : 'text-orange-600 dark:text-orange-400'"
-                                    title="Izin" class="!px-2" />
+                                    title="Izin" class="!px-2" :disabled="auth()->user()->hasRole('guru')" />
 
                                 {{-- Alpha/Absent --}}
                                 <flux:button wire:click="setStatus('{{ $student->id }}', 'absent')" size="sm"
                                     :variant="$status === 'absent' ? 'primary' : 'ghost'" color="red" icon="x-circle"
                                     :class="$status === 'absent' ? '' : 'text-red-600 dark:text-red-400'"
-                                    title="Alpha / Tidak Hadir" class="!px-2" />
+                                    title="Alpha / Tidak Hadir" class="!px-2" :disabled="auth()->user()->hasRole('guru')" />
                             </div>
                         </flux:table.cell>
                     </flux:table.row>
