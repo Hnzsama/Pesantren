@@ -17,7 +17,7 @@ Route::get('dashboard', function () {
         return redirect()->route('super-admin.dashboard');
     }
 
-    if ($user->hasRole('admin')) {
+    if ($user->hasRole('admin') || $user->hasRole('bendahara')) {
         return redirect()->route('admin.dashboard');
     }
 
@@ -27,6 +27,14 @@ Route::get('dashboard', function () {
 
     if ($user->hasRole('kasir')) {
         return redirect()->route('koperasi.dashboard');
+    }
+
+    if ($user->hasRole('guru')) {
+        return redirect()->route('guru.dashboard');
+    }
+
+    if ($user->hasRole('pengurus')) {
+        return redirect()->route('activities.attendance.index');
     }
 
     return view('dashboard');
@@ -39,6 +47,7 @@ Route::middleware(['auth'])->group(function () {
     // Dashboards - Statistics
     Route::livewire('super-admin/dashboard', 'pages::dashboard.super-admin-stat')->name('super-admin.dashboard');
     Route::livewire('admin/dashboard', 'pages::dashboard.admin-stat')->name('admin.dashboard');
+    Route::livewire('guru/dashboard', 'pages::dashboard.guru-stat')->name('guru.dashboard');
 
     // Dashboards - Financials
     Route::livewire('super-admin/financial', 'pages::dashboard.super-admin')->name('super-admin.financial');
@@ -57,6 +66,9 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('tahun-ajaran', 'pages::academic-years.index')->name('academic-years.index');
     Route::livewire('semester', 'pages::semesters.index')->name('semesters.index');
     Route::livewire('transaksi-dompet', 'pages::wallet-transactions.index')->name('wallet-transactions.index');
+    Route::get('transaksi-dompet/export', [\App\Http\Controllers\WalletTransactionExportController::class, 'export'])->name('wallet-transactions.export');
+    Route::get('transaksi-dompet/report', [\App\Http\Controllers\WalletTransactionExportController::class, 'report'])->name('wallet-transactions.report');
+    Route::get('transaksi-dompet/print/{invoiceCode}', [\App\Http\Controllers\WalletTransactionPrintController::class, 'printReceipt'])->name('wallet-transactions.print');
     Route::livewire('tagihan', 'pages::bills.index')->name('bills.index');
     Route::livewire('kategori-tagihan', 'pages::bill-categories.index')->name('bill-categories.index');
     Route::livewire('agenda-kegiatan', 'pages::events.index')->name('events.index');
@@ -103,6 +115,8 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('permintaan-cetak-kartu', 'pages::student-card-requests.index')->name('student-card-requests.index');
 
     // Withdrawals
+    Route::livewire('dashboard/admin/topup-manual', 'pages::dashboard.admin.manual-topup')->name('dashboard.admin.manual-topup');
+    Route::livewire('dashboard/admin/bayar-tagihan-manual', 'pages::dashboard.admin.manual-bill-payment')->name('dashboard.admin.manual-bill-payment');
     Route::livewire('dashboard/admin/penarikan-dana', 'pages::dashboard.admin.withdrawals')->name('dashboard.admin.withdrawals');
     Route::livewire('dashboard/admin/penarikan-uang-saku', 'pages::dashboard.admin.student-cash-withdrawal')->name('dashboard.admin.student-cash-withdrawal');
     Route::livewire('dashboard/super-admin/kelola-penarikan', 'pages::dashboard.super-admin.withdrawals')->name('dashboard.super-admin.withdrawals');

@@ -40,6 +40,15 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
         $this->loadStudents();
     }
 
+    protected function hasApprovedPermission($studentId, $date)
+    {
+        return \App\Models\StudentPermission::where('student_id', $studentId)
+            ->where('status', 'approved')
+            ->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date)
+            ->exists();
+    }
+
     public function loadStudents()
     {
         $levelIds = $this->event->levels->pluck('id');
@@ -55,7 +64,13 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
 
         foreach ($this->students as $student) {
             $record = $existingAttendance->get($student->id);
-            $this->attendance[$student->id] = $record ? $record->status : 'ABSENT'; // Default absent if not recorded? Or maybe null
+            if ($record) {
+                $this->attendance[$student->id] = $record->status;
+            } elseif ($this->hasApprovedPermission($student->id, $this->event->event_date)) {
+                $this->attendance[$student->id] = 'IZIN';
+            } else {
+                $this->attendance[$student->id] = 'ABSENT';
+            }
         }
     }
 
@@ -65,7 +80,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
             // Only save if status is PRESENT or LATE. If ABSENT, we might delete or just skip?
             // Schema says enum: PRESENT, LATE. So we probably only store records for those present/late.
 
-            if (in_array($status, ['PRESENT', 'LATE'])) {
+            if (in_array($status, ['PRESENT', 'LATE', 'IZIN'])) {
                 EventAttendance::updateOrCreate(
                     [
                         'event_id' => $this->event->id,
@@ -108,11 +123,13 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
         <flux:separator variant="subtle" />
     </div>
 
+    @if(!auth()->user()->hasRole('guru'))
     <div class="flex justify-end gap-2 mb-4">
         <flux:button wire:click="markAllPresent" size="sm" icon="check-circle">Hadir Semua</flux:button>
         <flux:button wire:click="saveAttendance" variant="primary" size="sm" icon="document-check">Simpan Presensi
         </flux:button>
     </div>
+    @endif
 
     <div class="space-y-4">
         <flux:table>
@@ -135,11 +152,13 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
 
                         <flux:table.cell>
                             <div class="flex gap-2">
+                                @php $isGuru = auth()->user()->hasRole('guru'); @endphp
                                 <flux:radio.group wire:model="attendance.{{ $student->id }}" variant="cards"
                                     class="flex-row">
-                                    <flux:radio value="PRESENT" label="Hadir" />
-                                    <flux:radio value="LATE" label="Telat" />
-                                    <flux:radio value="ABSENT" label="Alpa" />
+                                    <flux:radio value="PRESENT" label="Hadir" :disabled="$isGuru" />
+                                    <flux:radio value="LATE" label="Telat" :disabled="$isGuru" />
+                                    <flux:radio value="IZIN" label="Izin" :disabled="$isGuru" />
+                                    <flux:radio value="ABSENT" label="Alpa" :disabled="$isGuru" />
                                 </flux:radio.group>
                             </div>
                         </flux:table.cell>

@@ -53,14 +53,16 @@ new #[Lazy] class extends Component {
     }
 
     #[Computed]
-    public function totalPlatformFee()
+    public function totalPlatformFeeCash()
     {
         $billFees = Bill::where('status', 'PAID')
+            ->where('payment_method', 'MANUAL')
             ->where('admin_fee', '>', 0)
             ->when($this->schoolId, fn($q) => $q->where('school_id', $this->schoolId))
             ->sum('admin_fee');
 
         $walletFees = WalletTransaction::where('status', 'PAID')
+            ->where('payment_method', 'cash')
             ->where('admin_fee', '>', 0)
             ->when($this->schoolId, fn($q) => $q->where('school_id', $this->schoolId))
             ->sum('admin_fee');
@@ -69,19 +71,39 @@ new #[Lazy] class extends Component {
     }
 
     #[Computed]
+    public function totalPlatformFeeNonCash()
+    {
+        $billFees = Bill::where('status', 'PAID')
+            ->where('payment_method', '!=', 'MANUAL')
+            ->where('admin_fee', '>', 0)
+            ->when($this->schoolId, fn($q) => $q->where('school_id', $this->schoolId))
+            ->sum('admin_fee');
+
+        $walletFees = WalletTransaction::where('status', 'PAID')
+            ->where('payment_method', '!=', 'cash')
+            ->where('admin_fee', '>', 0)
+            ->when($this->schoolId, fn($q) => $q->where('school_id', $this->schoolId))
+            ->sum('admin_fee');
+
+        return $billFees + $walletFees;
+    }
+
+    #[Computed]
+    public function totalPlatformFee()
+    {
+        return $this->totalPlatformFeeCash + $this->totalPlatformFeeNonCash;
+    }
+
+    #[Computed]
     public function totalManagedBalance()
     {
-        // This represents the total value flowing through the system verified by payment gateway?
-        // OR the sum of funds currently held by ALL schools (which we might not track cleanly if there's no withdrawal yet).
-        // Since "Pesantren having saldo" comes from Bill Payments + Topups,
-        // essentially Total Inflow (gross). Let's use that definition for "Accumulated Value".
-        // Or if we strictly mean "Current Balance", we simply sum up wallet balances if we had them.
-        // Given wallet transactions table, we can sum (CREDITS - DEBITS).
-
-        // Sum all CREDITS (Topup + Inflow) - DEBITS (Withdrawal/Usage)
-        // But for dashboard simplicity, let's track "Gross Revenue Processed" (Bill + Topup)
-        // because we don't handle withdrawals yet.
         return $this->totalBillPaid + $this->totalTopUp;
+    }
+
+    #[Computed]
+    public function totalCashAtAgents()
+    {
+        return app(\App\Services\FinancialService::class)->getTotalCashAtAgents($this->schoolId);
     }
 
     #[Computed]
@@ -229,7 +251,29 @@ new #[Lazy] class extends Component {
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <!-- Total Cash at Agents -->
+        <flux:card
+            class="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-gradient-to-br from-amber-500/10 to-orange-500/5 dark:from-amber-500/15 dark:to-orange-500/10 ring-1 ring-amber-100 dark:ring-amber-900/30">
+            <div class="flex items-start justify-between">
+                <div class="space-y-3">
+                    <flux:text class="font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest text-[10px]">
+                        Tunai di Sekolah</flux:text>
+                    <div class="flex items-baseline gap-2">
+                        <flux:heading size="xl" class="text-2xl font-bold tabular-nums">Rp
+                            {{ number_format($this->totalCashAtAgents, 0, ',', '.') }}
+                        </flux:heading>
+                    </div>
+                </div>
+                <div
+                    class="p-3 bg-amber-500/10 dark:bg-amber-500/20 rounded-2xl text-amber-600 dark:text-amber-400 group-hover:rotate-12 transition-transform duration-300">
+                    <flux:icon name="banknotes" variant="outline" class="w-6 h-6" />
+                </div>
+            </div>
+            <div class="absolute -bottom-2 -right-2 opacity-5 scale-150 rotate-12 text-amber-600 dark:text-amber-400">
+                <flux:icon name="banknotes" class="w-20 h-20" />
+            </div>
+        </flux:card>
         <!-- Total Managed Balance -->
         <flux:card
             class="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-gradient-to-br from-blue-500/10 to-indigo-500/5 dark:from-sky-500/15 dark:to-indigo-500/10 ring-1 ring-blue-100 dark:ring-blue-900/30">
@@ -305,21 +349,35 @@ new #[Lazy] class extends Component {
         <!-- Fees -->
         <flux:card
             class="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-gradient-to-br from-pink-500/10 to-rose-500/5 dark:from-pink-500/15 dark:to-rose-500/10 ring-1 ring-pink-100 dark:ring-pink-900/30">
-            <div class="flex items-start justify-between">
-                <div class="space-y-3">
+            <div class="flex items-start justify-between mb-4">
+                <div class="space-y-1">
                     <flux:text class="font-bold text-pink-600 dark:text-pink-400 uppercase tracking-widest text-[10px]">
-                        Platform Fee</flux:text>
-                    <div class="flex items-baseline gap-2">
-                        <flux:heading size="xl" class="text-2xl font-bold tabular-nums">Rp
-                            {{ number_format($this->totalPlatformFee, 0, ',', '.') }}
-                        </flux:heading>
-                    </div>
+                        Platform Fee (Total)</flux:text>
+                    <flux:heading size="xl" class="text-2xl font-bold tabular-nums">Rp
+                        {{ number_format($this->totalPlatformFee, 0, ',', '.') }}
+                    </flux:heading>
                 </div>
                 <div
                     class="p-3 bg-pink-500/10 dark:bg-pink-500/20 rounded-2xl text-pink-600 dark:text-pink-400 group-hover:rotate-12 transition-transform duration-300">
                     <flux:icon name="receipt-percent" variant="outline" class="w-6 h-6" />
                 </div>
             </div>
+
+            <div class="grid grid-cols-2 gap-4 border-t border-pink-100 dark:border-pink-900/30 pt-4 relative z-10">
+                <div class="space-y-1">
+                    <flux:text class="text-[9px] uppercase tracking-wider text-zinc-500">Tunai (Manual)</flux:text>
+                    <div class="font-bold text-zinc-800 dark:text-zinc-200 text-sm tabular-nums">
+                        Rp {{ number_format($this->totalPlatformFeeCash, 0, ',', '.') }}
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <flux:text class="text-[9px] uppercase tracking-wider text-zinc-500">Non-Tunai (Gateway)</flux:text>
+                    <div class="font-bold text-zinc-800 dark:text-zinc-200 text-sm tabular-nums">
+                        Rp {{ number_format($this->totalPlatformFeeNonCash, 0, ',', '.') }}
+                    </div>
+                </div>
+            </div>
+
             <div class="absolute -bottom-2 -right-2 opacity-5 scale-150 rotate-12 text-pink-600 dark:text-pink-400">
                 <flux:icon name="receipt-percent" class="w-20 h-20" />
             </div>

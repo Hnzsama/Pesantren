@@ -133,7 +133,9 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
     }
 }; ?>
 
+@assets
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+@endassets
 
 <div class="min-h-screen flex flex-col items-center justify-center p-6 text-zinc-800 dark:text-zinc-100">
     <div class="w-full max-w-4xl space-y-8">

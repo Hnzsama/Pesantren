@@ -4,6 +4,7 @@ use App\Models\News;
 use App\Services\ImageCompressionService;
 use Flux\Flux;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Lazy;
@@ -203,7 +204,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                 class="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full group">
                 @if($news->images && count($news->images) > 0)
                     <div class="relative aspect-video bg-zinc-100 dark:bg-zinc-800">
-                        <img src="{{ asset('storage/' . $news->images[0]) }}" class="w-full h-full object-cover">
+                        <img src="{{ Storage::disk('public')->url($news->images[0]) }}" class="w-full h-full object-cover">
                         @if(count($news->images) > 1)
                             <div class="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
                                 +{{ count($news->images) - 1 }} foto lainnya
@@ -298,7 +299,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                             @foreach($selectedNews->images as $imagePath)
                                 <div
                                     class="rounded-xl overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800">
-                                    <img src="{{ asset('storage/' . $imagePath) }}"
+                                    <img src="{{ Storage::disk('public')->url($imagePath) }}"
                                         class="w-full h-auto object-cover hover:scale-105 transition-transform duration-300">
                                 </div>
                             @endforeach

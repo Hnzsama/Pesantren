@@ -234,6 +234,33 @@ new #[Lazy] #[Layout('layouts.app')] #[Title('Dashboard')] class extends Compone
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Quick Actions -->
+        <flux:card>
+            <flux:heading size="lg" class="mb-4">Aksi Cepat</flux:heading>
+            <div class="grid grid-cols-2 gap-4">
+                <flux:button href="{{ route('dashboard.admin.manual-topup') }}" icon="plus-circle" wire:navigate
+                    class="h-24 flex-col gap-2">
+                    Top Up Manual
+                </flux:button>
+                <flux:button href="{{ route('dashboard.admin.student-cash-withdrawal') }}" icon="banknotes" wire:navigate
+                    class="h-24 flex-col gap-2">
+                    Tarik Tunai
+                </flux:button>
+                <flux:button href="{{ route('students.index') }}" icon="user-plus" wire:navigate
+                    class="h-24 flex-col gap-2">
+                    Santri Baru
+                </flux:button>
+                <flux:button href="{{ route('bills.index') }}" icon="document-text" wire:navigate
+                    class="h-24 flex-col gap-2">
+                    Data Tagihan
+                </flux:button>
+                <flux:button href="{{ route('dashboard.admin.manual-bill-payment') }}" icon="banknotes" wire:navigate
+                    class="h-24 flex-col gap-2">
+                    Bayar Tagihan
+                </flux:button>
+            </div>
+        </flux:card>
+
         <!-- Gender Chart -->
         <flux:card class="flex flex-col">
             <flux:heading size="lg" class="mb-8">Rasio Gender</flux:heading>

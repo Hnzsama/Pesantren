@@ -2,10 +2,12 @@
 
 use App\Models\Student;
 use App\Models\WalletTransaction;
+use App\Services\TransactionService;
 use Livewire\Attributes\Url;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Flux\Flux;
 
 new #[Lazy] class extends Component {
     use WithPagination;
@@ -66,6 +68,15 @@ new #[Lazy] class extends Component {
 
     public $selectedTransaction = null;
 
+    // Export Form
+    public $exportCategory = '';
+
+    // Topup Form
+    public $topup_student_id = '';
+    public $topup_amount = 0;
+    public $topup_admin_fee = 2000;
+    public $topup_description = '';
+
     public function with(): array
     {
         $user = auth()->user();
@@ -107,6 +118,59 @@ new #[Lazy] class extends Component {
         $this->modal('transaction-detail-modal')->close();
     }
 
+    public function openTopupModal()
+    {
+        $this->reset(['topup_student_id', 'topup_amount', 'topup_description']);
+        $this->topup_admin_fee = 2000; // Default fee
+        $this->modal('manual-topup-modal')->show();
+    }
+
+    public function createTopup(TransactionService $transactionService)
+    {
+        $this->validate([
+            'topup_student_id' => 'required|exists:students,id',
+            'topup_amount' => 'required|numeric|min:1000',
+            'topup_admin_fee' => 'required|numeric|min:0',
+        ]);
+
+        try {
+            $student = Student::findOrFail($this->topup_student_id);
+            $transactionService->processTopup(
+                $student, 
+                (float) $this->topup_amount, 
+                auth()->user(), 
+                (float) $this->topup_admin_fee,
+                $this->topup_description
+            );
+
+            Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Top up manual berhasil diproses.');
+            $this->modal('manual-topup-modal')->close();
+            $this->resetPage();
+        } catch (\Exception $e) {
+            Flux::toast(variant: 'danger', heading: 'Gagal', text: $e->getMessage());
+        }
+    }
+
+    public function openExportModal()
+    {
+        $this->exportCategory = '';
+        $this->modal('export-modal')->show();
+    }
+
+    public function runExport()
+    {
+        $url = route('wallet-transactions.export', ['category' => $this->exportCategory]);
+        $this->modal('export-modal')->close();
+        return redirect()->away($url);
+    }
+
+    public function runReport()
+    {
+        $url = route('wallet-transactions.report', ['category' => $this->exportCategory]);
+        $this->modal('export-modal')->close();
+        return redirect()->away($url);
+    }
+
     public function getCategoryColor($category)
     {
         return match ($category) {
@@ -144,6 +208,10 @@ new #[Lazy] class extends Component {
             <div>
                 <flux:heading size="xl" level="1">{{ __('Transaksi Dompet') }}</flux:heading>
                 <flux:subheading size="lg">{{ __('Riwayat transaksi dompet santri') }}</flux:subheading>
+            </div>
+            <div class="flex gap-2">
+                <flux:button variant="subtle" icon="document-arrow-down" wire:click="openExportModal">Ekspor CSV</flux:button>
+                <flux:button variant="primary" icon="plus" wire:click="openTopupModal">Top Up Manual</flux:button>
             </div>
         </div>
         <flux:separator variant="subtle" />
@@ -187,10 +255,9 @@ new #[Lazy] class extends Component {
             <flux:table.column>Invoice</flux:table.column>
             <flux:table.column>Santri</flux:table.column>
             <flux:table.column>Kategori</flux:table.column>
+            <flux:table.column>Metode</flux:table.column>
             <flux:table.column>Tipe</flux:table.column>
             <flux:table.column>Jumlah</flux:table.column>
-            <flux:table.column>Platform Fee</flux:table.column>
-            <flux:table.column>PG Fee</flux:table.column>
             <flux:table.column>Status</flux:table.column>
             <flux:table.column>Tanggal</flux:table.column>
             <flux:table.column>Aksi</flux:table.column>
@@ -227,6 +294,12 @@ new #[Lazy] class extends Component {
                             </flux:table.cell>
 
                             <flux:table.cell>
+                                <flux:badge size="sm" :color="$txn->payment_method === 'cash' ? 'blue' : 'purple'" variant="subtle">
+                                    {{ $txn->payment_method === 'cash' ? 'Tunai' : 'Non-Tunai' }}
+                                </flux:badge>
+                            </flux:table.cell>
+                            
+                            <flux:table.cell>
                                 <flux:badge size="sm" :color="$this->getTypeColor($txn->type)" variant="outline">
                                     {{ $txn->type === 'CREDIT' ? '↑ Kredit' : '↓ Debit' }}
                                 </flux:badge>
@@ -235,18 +308,6 @@ new #[Lazy] class extends Component {
                             <flux:table.cell>
                                 <span class="{{ $txn->type === 'CREDIT' ? 'text-green-600' : 'text-red-600' }}">
                                     {{ $txn->type === 'CREDIT' ? '+' : '-' }} Rp {{ number_format($txn->amount, 0, ',', '.') }}
-                                </span>
-                            </flux:table.cell>
-
-                            <flux:table.cell class="tabular-nums">
-                                <span class="text-zinc-500 text-sm">
-                                    Rp {{ number_format($txn->admin_fee, 0, ',', '.') }}
-                                </span>
-                            </flux:table.cell>
-
-                            <flux:table.cell class="tabular-nums">
-                                <span class="text-zinc-500 text-sm">
-                                    Rp {{ number_format($txn->payment_fee, 0, ',', '.') }}
                                 </span>
                             </flux:table.cell>
 
@@ -266,9 +327,14 @@ new #[Lazy] class extends Component {
                             </flux:table.cell>
 
                             <flux:table.cell>
-                                <flux:button variant="ghost" size="sm" icon="eye" wire:click="viewDetail('{{ $txn->id }}')">
-                                    Detail
-                                </flux:button>
+                                <div class="flex items-center gap-2">
+                                    <flux:button variant="ghost" size="sm" icon="eye" wire:click="viewDetail('{{ $txn->id }}')">
+                                        Detail
+                                    </flux:button>
+                                    @if($txn->category === 'TOPUP')
+                                        <flux:button variant="ghost" size="sm" icon="printer" href="{{ route('wallet-transactions.print', $txn->invoice_code) }}" target="_blank" tooltip="Cetak Struk" />
+                                    @endif
+                                </div>
                             </flux:table.cell>
                         </flux:table.row>
             @empty
@@ -350,44 +416,7 @@ new #[Lazy] class extends Component {
                         </div>
                     </div>
 
-                    <!-- Fees Breakdown -->
-                    @if($selectedTransaction->payment_fee > 0 || $selectedTransaction->admin_fee > 0)
-                        <div class="bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-5 space-y-4">
-                            <flux:label>Rincian Biaya</flux:label>
-
-                            <div class="space-y-3 text-sm">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-zinc-600 dark:text-zinc-400">Jumlah Transaksi</span>
-                                    <span class="font-medium">Rp
-                                        {{ number_format($selectedTransaction->amount, 0, ',', '.') }}</span>
-                                </div>
-
-                                @if($selectedTransaction->payment_fee > 0)
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-zinc-600 dark:text-zinc-400">Biaya Payment Gateway</span>
-                                        <span class="font-medium">Rp
-                                            {{ number_format($selectedTransaction->payment_fee, 0, ',', '.') }}</span>
-                                    </div>
-                                @endif
-
-                                @if($selectedTransaction->admin_fee > 0)
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-zinc-600 dark:text-zinc-400">Biaya Admin</span>
-                                        <span class="font-medium">Rp
-                                            {{ number_format($selectedTransaction->admin_fee, 0, ',', '.') }}</span>
-                                    </div>
-                                @endif
-
-                                <flux:separator variant="subtle" />
-
-                                <div class="flex justify-between items-center text-base pt-1">
-                                    <span class="font-semibold">Total Keseluruhan</span>
-                                    <span class="font-bold text-lg">Rp
-                                        {{ number_format($selectedTransaction->amount + $selectedTransaction->payment_fee + $selectedTransaction->admin_fee, 0, ',', '.') }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
+                    {{-- Hidden Fee Details for Admin --}}
 
                     <flux:separator />
 
@@ -404,7 +433,7 @@ new #[Lazy] class extends Component {
                                 <div class="flex items-center gap-2">
                                     <flux:icon.{{ $selectedTransaction->payment_method === 'cash' ? 'banknotes' : 'credit-card' }}
                                         class="w-4 h-4 text-zinc-500" />
-                                    <span>{{ $selectedTransaction->payment_method === 'cash' ? 'Tunai' : 'Payment Gateway' }}</span>
+                                    <span>{{ $selectedTransaction->payment_method === 'cash' ? 'Tunai' : ($selectedTransaction->payment_method === 'transfer' ? 'Transfer' : 'Non-Tunai') }}</span>
                                 </div>
                             </div>
 
@@ -443,5 +472,81 @@ new #[Lazy] class extends Component {
                     </div>
                 </div>
         @endif
+    </flux:modal>
+
+    <!-- Manual Topup Modal -->
+    <flux:modal name="manual-topup-modal" class="md:w-[500px] space-y-6">
+        <div>
+            <flux:heading size="lg">Top Up Manual (Tunai)</flux:heading>
+            <flux:subheading>Gunakan fitur ini untuk menerima top up tunai dari orang tua santri.</flux:subheading>
+        </div>
+
+        <form wire:submit="createTopup" class="space-y-4">
+            <flux:select wire:model="topup_student_id" label="Pilih Santri" variant="listbox" filter placeholder="Cari santri...">
+                @foreach ($students as $student)
+                    <flux:select.option value="{{ $student->id }}">{{ $student->full_name }} ({{ $student->nis }})</flux:select.option>
+                @endforeach
+            </flux:select>
+
+            <div class="grid grid-cols-2 gap-4">
+                <flux:input wire:model="topup_amount" type="number" label="Nominal Top Up" icon="banknotes" prefix="Rp" />
+                <flux:input wire:model="topup_admin_fee" type="number" label="Biaya Admin" icon="receipt-percent" prefix="Rp" />
+            </div>
+
+            <flux:textarea wire:model="topup_description" label="Keterangan (Opsional)" placeholder="Contoh: Titipan tunai di kantor" />
+
+            <div class="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-lg">
+                <div class="flex justify-between items-center text-sm mb-1">
+                    <span class="text-zinc-500">Saldo Masuk</span>
+                    <span class="font-medium text-green-600">Rp {{ number_format((float)($topup_amount ?: 0), 0, ',', '.') }}</span>
+                </div>
+                <div class="flex justify-between items-center text-sm mb-2">
+                    <span class="text-zinc-500">Biaya Admin</span>
+                    <span class="font-medium text-red-600">Rp {{ number_format((float)($topup_admin_fee ?: 0), 0, ',', '.') }}</span>
+                </div>
+                <flux:separator variant="subtle" />
+                <div class="flex justify-between items-center pt-2">
+                    <span class="font-semibold text-zinc-700 dark:text-zinc-300">Total Dibayar Orang Tua</span>
+                    <span class="font-bold text-lg text-zinc-900 dark:text-zinc-100">
+                        Rp {{ number_format((float)($topup_amount ?: 0) + (float)($topup_admin_fee ?: 0), 0, ',', '.') }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="flex gap-2 justify-end">
+                <flux:modal.close>
+                    <flux:button variant="ghost">Batal</flux:button>
+                </flux:modal.close>
+                <flux:button type="submit" variant="primary">Proses Top Up</flux:button>
+            </div>
+        </form>
+    </flux:modal>
+
+    <!-- Export Modal -->
+    <flux:modal name="export-modal" class="md:w-[400px] space-y-6">
+        <div>
+            <flux:heading size="lg">Ekspor Transaksi</flux:heading>
+            <flux:subheading>Pilih kategori transaksi yang ingin diekspor ke format CSV.</flux:subheading>
+        </div>
+
+        <div class="space-y-4">
+            <flux:select wire:model="exportCategory" label="Pilih Kategori" variant="listbox">
+                <flux:select.option value="">Semua Kategori</flux:select.option>
+                <flux:select.option value="TOPUP">Top Up</flux:select.option>
+                <flux:select.option value="WITHDRAWAL">Penarikan</flux:select.option>
+                <flux:select.option value="PURCHASE">Pembelian</flux:select.option>
+                <flux:select.option value="DEPOSIT_TO_HQ">Setor ke Pusat</flux:select.option>
+            </flux:select>
+
+            <div class="flex gap-2 justify-end">
+                <flux:modal.close>
+                    <flux:button variant="ghost">Batal</flux:button>
+                </flux:modal.close>
+                <div class="flex gap-2">
+                    <flux:button wire:click="runExport" variant="subtle" icon="document-text">Unduh CSV</flux:button>
+                    <flux:button wire:click="runReport" variant="primary" icon="printer">Cetak Laporan (PDF)</flux:button>
+                </div>
+            </div>
+        </div>
     </flux:modal>
 </div>
