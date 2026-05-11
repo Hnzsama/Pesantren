@@ -478,7 +478,7 @@ new #[Lazy] class extends Component {
                     <div>
                         <flux:subheading class="text-xs text-zinc-500 mb-2">Bukti Transfer</flux:subheading>
                         <div class="bg-zinc-50 dark:bg-zinc-800 p-4 rounded">
-                            <img src="{{ asset('storage/' . $selectedWithdrawal->payment_proof) }}"
+                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($selectedWithdrawal->payment_proof) }}"
                                 class="w-full max-h-48 rounded border cursor-pointer hover:opacity-80 transition object-contain bg-zinc-100 dark:bg-zinc-900"
                                 alt="Bukti Transfer" onclick="window.open(this.src, '_blank')">
                             <div class="text-xs text-zinc-500 mt-2 flex items-center gap-1">

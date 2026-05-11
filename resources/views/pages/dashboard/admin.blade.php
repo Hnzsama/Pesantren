@@ -58,30 +58,28 @@ new #[Lazy] class extends Component
     }
 
     #[Computed]
-    public function saldoPesantren()
+    public function totalDigitalBalance()
     {
-        // WALLET A: Saldo Utama Pesantren (Revenue)
-        // Formula: Total Bill Paid - Total Penarikan Pesantren (REVENUE source, COMMITTED status)
-        $totalWithdrawnRevenue = \App\Models\Withdrawal::where('school_id', $this->schoolId)
-            ->where('source_type', 'REVENUE')
+        // Combined balance of all digital/gateway money (Revenue + Trust Fund)
+        // Formula: Total Paid Bills (Manual + Gateway) + Total Digital Topups - Total HQ Withdrawals (Committed)
+        
+        $totalHQWithdrawn = \App\Models\Withdrawal::where('school_id', $this->schoolId)
             ->whereIn('status', ['APPROVED', 'PAID'])
             ->sum('amount');
 
-        return $this->totalBillPaid - $totalWithdrawnRevenue;
-    }
-
-    #[Computed]
-    public function saldoDanaTitipanNet()
-    {
-        // WALLET B: Saldo Dana Titipan (Trust Fund Cash Pool in Gateway)
-        // Formula: Total Top Up - Total Penarikan Pesantren (TRUST_FUND source, COMMITTED status)
-        // Note: Individual student withdrawals (Tarik Tunai) are internal cash movements and do NOT reduce this pool.
-        $totalWithdrawnTrust = \App\Models\Withdrawal::where('school_id', $this->schoolId)
-            ->where('source_type', 'TRUST_FUND')
-            ->whereIn('status', ['APPROVED', 'PAID'])
+        $totalDigitalTopups = WalletTransaction::where('school_id', $this->schoolId)
+            ->where('type', 'CREDIT')
+            ->where('category', 'TOPUP')
+            ->where('status', 'PAID')
+            ->where('payment_method', '!=', 'cash')
             ->sum('amount');
 
-        return $this->totalTopUp - $totalWithdrawnTrust;
+        $totalPlatformFees = WalletTransaction::where('school_id', $this->schoolId)
+            ->where('payment_method', 'cash')
+            ->where('category', 'TOPUP')
+            ->sum('admin_fee');
+
+        return $this->totalBillPaid + $totalDigitalTopups - $totalHQWithdrawn - $totalPlatformFees;
     }
 
     #[Computed]
@@ -135,11 +133,13 @@ new #[Lazy] class extends Component
     #[Computed]
     public function totalTopUp()
     {
-        // Gross historical top-ups
+        // Gross historical top-ups (Digital/Gateway Only)
+        // Cash top-ups go to cashOnHand instead
         return WalletTransaction::where('school_id', $this->schoolId)
             ->where('type', 'CREDIT')
             ->where('category', 'TOPUP')
             ->where('status', 'PAID')
+            ->where('payment_method', '!=', 'cash')
             ->sum('amount');
     }
 
@@ -152,6 +152,40 @@ new #[Lazy] class extends Component
             ->where('category', 'WITHDRAWAL')
             ->where('status', 'PAID')
             ->sum('amount');
+    }
+
+    #[Computed]
+    public function cashOnHand()
+    {
+        // Formula: Total Cash Credits (Topups) - Total Cash Debits (Withdrawals) - Total Confirmed Deposits to HQ
+        $totalCashCredits = WalletTransaction::where('school_id', $this->schoolId)
+            ->where('payment_method', 'cash')
+            ->where('type', 'CREDIT')
+            ->sum('amount');
+
+        $totalCashSales = WalletTransaction::where('school_id', $this->schoolId)
+            ->where('payment_method', 'cash')
+            ->where('category', 'PURCHASE')
+            ->sum('amount');
+
+        $totalManualBillPayments = Bill::where('school_id', $this->schoolId)
+            ->where('status', 'PAID')
+            ->where('payment_method', 'MANUAL')
+            ->sum('amount');
+
+        $totalCashCredits += $totalManualBillPayments + $totalCashSales;
+
+        $totalCashDebits = WalletTransaction::where('school_id', $this->schoolId)
+            ->where('payment_method', 'cash')
+            ->where('category', 'WITHDRAWAL')
+            ->where('type', 'DEBIT')
+            ->sum('amount');
+
+        $totalConfirmedDeposits = \App\Models\AdminDeposit::where('school_id', $this->schoolId)
+            ->where('status', 'confirmed')
+            ->sum('amount');
+
+        return $totalCashCredits - $totalCashDebits - $totalConfirmedDeposits;
     }
 
     #[Computed]
@@ -387,37 +421,69 @@ new #[Lazy] class extends Component
             <flux:heading size="xl" level="1">Dashboard Pesantren</flux:heading>
             <flux:subheading size="lg" class="mb-6">Ringkasan Keuangan & Transaksi</flux:subheading>
         </div>
-        <flux:button icon="arrow-path" variant="subtle" wire:click="$refresh">Refresh</flux:button>
+        <div class="flex gap-2">
+            <flux:button href="{{ route('dashboard.admin.manual-bill-payment') }}" icon="banknotes" variant="primary">Bayar Tagihan Manual</flux:button>
+            <flux:button icon="arrow-path" variant="subtle" wire:click="$refresh">Refresh</flux:button>
+        </div>
     </div>
 
     <!-- ROW 1: CORE FINANCIAL (3 columns) -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Saldo Pesantren -->
+        <!-- Total Saldo di Pusat (Digital) -->
         <flux:card
             class="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-gradient-to-br from-emerald-500/10 to-teal-500/5 dark:from-emerald-500/15 dark:to-teal-500/10 ring-1 ring-emerald-100 dark:ring-emerald-900/30">
             <div class="flex items-start justify-between">
                 <div class="space-y-3">
                     <flux:text
                         class="font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest text-[10px]">
-                        Saldo Utama Pesantren</flux:text>
+                        Total Saldo di Pusat (Sistem)</flux:text>
                     <div class="flex items-baseline gap-2">
                         <flux:heading size="xl"
                             class="text-2xl font-bold tabular-nums text-emerald-700 dark:text-emerald-300">Rp
-                            {{ number_format($this->saldoPesantren, 0, ',', '.') }}
+                            {{ number_format($this->totalDigitalBalance, 0, ',', '.') }}
                         </flux:heading>
                     </div>
                     <flux:text size="xs"
                         class="font-medium text-emerald-600/70 dark:text-emerald-400/60 transition-opacity group-hover:opacity-100 italic">
-                        Eksklusif Dana Titipan</flux:text>
+                        Gabungan Dana Utama & Titipan</flux:text>
                 </div>
                 <div
                     class="p-3 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-2xl text-emerald-600 dark:text-emerald-400 group-hover:rotate-12 transition-transform duration-300">
-                    <flux:icon name="banknotes" variant="outline" class="w-6 h-6" />
+                    <flux:icon name="globe-alt" variant="outline" class="w-6 h-6" />
                 </div>
             </div>
             <div
                 class="absolute -bottom-2 -right-2 opacity-5 scale-150 rotate-12 text-emerald-600 dark:text-emerald-400">
-                <flux:icon name="banknotes" class="w-20 h-20" />
+                <flux:icon name="globe-alt" class="w-20 h-20" />
+            </div>
+        </flux:card>
+
+        <!-- Cash on Hand (Admin) -->
+        <flux:card
+            class="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-gradient-to-br from-amber-500/10 to-orange-500/5 dark:from-amber-500/15 dark:to-orange-500/10 ring-1 ring-amber-100 dark:ring-amber-900/30">
+            <div class="flex items-start justify-between">
+                <div class="space-y-3">
+                    <flux:text
+                        class="font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest text-[10px]">
+                        Uang Tunai di Tangan Admin</flux:text>
+                    <div class="flex items-baseline gap-2">
+                        <flux:heading size="xl"
+                            class="text-2xl font-bold tabular-nums text-amber-700 dark:text-amber-300">Rp
+                            {{ number_format($this->cashOnHand, 0, ',', '.') }}
+                        </flux:heading>
+                    </div>
+                    <flux:text size="xs"
+                        class="font-medium text-amber-600/70 dark:text-amber-400/60 transition-opacity group-hover:opacity-100 italic">
+                        Wajib disetor ke Pusat</flux:text>
+                </div>
+                <div
+                    class="p-3 bg-amber-500/10 dark:bg-amber-500/20 rounded-2xl text-amber-600 dark:text-amber-400 group-hover:rotate-12 transition-transform duration-300">
+                    <flux:icon name="identification" variant="outline" class="w-6 h-6" />
+                </div>
+            </div>
+            <div
+                class="absolute -bottom-2 -right-2 opacity-5 scale-150 rotate-12 text-amber-600 dark:text-amber-400">
+                <flux:icon name="identification" class="w-20 h-20" />
             </div>
         </flux:card>
 
@@ -474,18 +540,18 @@ new #[Lazy] class extends Component
         </flux:card>
     </div>
 
-    <!-- ROW 2: CASH FLOW (3 columns) -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Total Penarikan Revenue -->
+    <!-- ROW 2: OTHER STATS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Total Penarikan ke Rekening -->
         <flux:card
             class="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-gradient-to-br from-red-500/10 to-rose-500/5 dark:from-red-500/15 dark:to-rose-500/10 ring-1 ring-red-100 dark:ring-red-900/30">
             <div class="flex items-start justify-between">
                 <div class="space-y-3">
                     <flux:text class="font-bold text-red-600 dark:text-red-400 uppercase tracking-widest text-[10px]">
-                        Total Penarikan Revenue</flux:text>
+                        Total Penarikan ke Rekening</flux:text>
                     <div class="flex items-baseline gap-2">
                         <flux:heading size="lg" class="tabular-nums text-red-600 dark:text-red-400">Rp
-                            {{ number_format($this->totalPenarikanRevenueCommitted, 0, ',', '.') }}
+                            {{ number_format(\App\Models\Withdrawal::where('school_id', $this->schoolId)->whereIn('status', ['APPROVED', 'PAID'])->sum('amount'), 0, ',', '.') }}
                         </flux:heading>
                     </div>
                 </div>
@@ -496,30 +562,6 @@ new #[Lazy] class extends Component
             </div>
             <div class="absolute -bottom-2 -right-2 opacity-5 scale-150 rotate-12 text-red-600 dark:text-red-400">
                 <flux:icon name="arrow-trending-down" class="w-20 h-20" />
-            </div>
-        </flux:card>
-
-        <!-- Saldo Dana Titipan (Trust Fund Cash Pool) -->
-        <flux:card
-            class="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-gradient-to-br from-purple-500/10 to-fuchsia-500/5 dark:from-purple-500/15 dark:to-fuchsia-500/10 ring-1 ring-purple-100 dark:ring-purple-900/30">
-            <div class="flex items-start justify-between">
-                <div class="space-y-3">
-                    <flux:text
-                        class="font-bold text-purple-700 dark:text-purple-400 uppercase tracking-widest text-[10px]">
-                        Saldo Dana Titipan Santri</flux:text>
-                    <div class="flex items-baseline gap-2">
-                        <flux:heading size="lg" class="tabular-nums text-purple-700 dark:text-purple-400">Rp
-                            {{ number_format($this->saldoDanaTitipanNet, 0, ',', '.') }}
-                        </flux:heading>
-                    </div>
-                </div>
-                <div
-                    class="p-3 bg-purple-500/10 dark:bg-purple-900/20 rounded-2xl text-purple-600 dark:text-purple-400 group-hover:rotate-12 transition-transform duration-300">
-                    <flux:icon name="wallet" variant="outline" class="w-6 h-6" />
-                </div>
-            </div>
-            <div class="absolute -bottom-2 -right-2 opacity-5 scale-150 rotate-12 text-purple-600 dark:text-purple-400">
-                <flux:icon name="wallet" class="w-20 h-20" />
             </div>
         </flux:card>
 
@@ -544,26 +586,6 @@ new #[Lazy] class extends Component
             <div class="absolute -bottom-2 -right-2 opacity-5 scale-150 rotate-12 text-zinc-600 dark:text-zinc-400">
                 <flux:icon name="user-minus" class="w-20 h-20" />
             </div>
-        </flux:card>
-    </div>
-
-    <!-- Fee Grid (2 columns) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <flux:card
-            class="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-gradient-to-br from-zinc-100 to-zinc-50 dark:from-zinc-900 dark:to-zinc-800 ring-1 ring-zinc-200 dark:ring-zinc-800">
-            <flux:text class="font-bold text-zinc-500 uppercase tracking-widest text-[10px]">Total Platform Fee
-            </flux:text>
-            <flux:heading size="lg" class="mt-1 tabular-nums text-zinc-500">
-                Rp {{ number_format($this->totalPlatformFee, 0, ',', '.') }}
-            </flux:heading>
-        </flux:card>
-
-        <flux:card
-            class="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-gradient-to-br from-zinc-100 to-zinc-50 dark:from-zinc-900 dark:to-zinc-800 ring-1 ring-zinc-200 dark:ring-zinc-800">
-            <flux:text class="font-bold text-zinc-500 uppercase tracking-widest text-[10px]">Total PG Fee</flux:text>
-            <flux:heading size="lg" class="mt-1 tabular-nums text-zinc-500">
-                Rp {{ number_format($this->totalPgFee, 0, ',', '.') }}
-            </flux:heading>
         </flux:card>
     </div>
 
@@ -716,8 +738,6 @@ new #[Lazy] class extends Component
                 <flux:table.column>Santri</flux:table.column>
                 <flux:table.column>Kategori</flux:table.column>
                 <flux:table.column align="right">Nominal Bersih</flux:table.column>
-                <flux:table.column align="right">Platform Fee</flux:table.column>
-                <flux:table.column align="right">PG Fee</flux:table.column>
                 <flux:table.column>Status</flux:table.column>
                 <flux:table.column>Tanggal</flux:table.column>
             </flux:table.columns>
@@ -754,12 +774,6 @@ new #[Lazy] class extends Component
                                 class="{{ $trx->flow_type === 'IN' ? 'text-emerald-600 dark:text-emerald-400' : 'text-orange-600 dark:text-orange-400' }}">
                                 {{ $trx->flow_type === 'IN' ? '+' : '-' }} Rp {{ number_format($trx->amount, 0, ',', '.') }}
                             </span>
-                        </flux:table.cell>
-                        <flux:table.cell align="right" class="text-xs text-zinc-500 tabular-nums whitespace-nowrap">
-                            Rp {{ number_format($trx->admin_fee, 0, ',', '.') }}
-                        </flux:table.cell>
-                        <flux:table.cell align="right" class="text-xs text-zinc-500 tabular-nums whitespace-nowrap">
-                            Rp {{ number_format($trx->payment_fee, 0, ',', '.') }}
                         </flux:table.cell>
                         <flux:table.cell>
                             @php

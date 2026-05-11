@@ -47,7 +47,7 @@ new #[Lazy] class extends Component {
         $query = User::query()
             ->with(['school', 'roles'])
             ->whereHas('roles', function ($q) {
-                $q->whereIn('name', ['admin', 'admin_koperasi', 'kasir']);
+                $q->whereIn('name', ['admin', 'admin_koperasi', 'kasir', 'guru', 'bendahara', 'pengurus']);
             })
             ->when($this->search, fn($q) => $q->where('name', 'like', '%' . $this->search . '%'))
             ->when($this->roleFilter, fn($q) => $q->whereHas('roles', fn($r) => $r->where('name', $this->roleFilter)));
@@ -60,7 +60,8 @@ new #[Lazy] class extends Component {
 
         return [
             'schools' => auth()->user()->hasRole('super_admin') ? School::all() : [],
-            'roles' => Role::whereIn('name', ['admin', 'admin_koperasi', 'kasir'])->get(),
+            'roles' => Role::whereIn('name', ['admin', 'admin_koperasi', 'kasir', 'guru', 'bendahara', 'pengurus'])->get(),
+            'users' => $query->paginate(10),
         ];
     }
 
@@ -98,7 +99,7 @@ new #[Lazy] class extends Component {
                 $user->assignRole($this->role);
 
                 // Send email notification for administrative roles
-                if (in_array($this->role, ['admin', 'admin_koperasi', 'kasir'])) {
+                if (in_array($this->role, ['admin', 'admin_koperasi', 'kasir', 'guru', 'bendahara', 'pengurus'])) {
                     $user->notify(new AdminCreatedNotification($this->password));
                 }
 
@@ -272,7 +273,7 @@ new #[Lazy] class extends Component {
                         <div class="flex gap-2">
                             <flux:button variant="ghost" size="sm" icon="pencil" wire:click="edit('{{ $user->id }}')">Edit
                             </flux:button>
-                            @if(in_array($user->roles->first()?->name, ['admin', 'admin_koperasi', 'kasir']))
+                            @if(in_array($user->roles->first()?->name, ['admin', 'admin_koperasi', 'kasir', 'guru', 'bendahara', 'pengurus']))
                                 <flux:button variant="ghost" size="sm" icon="paper-airplane"
                                     wire:click="confirmResendAccess('{{ $user->id }}')">Akses
                                 </flux:button>
