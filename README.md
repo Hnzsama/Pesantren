@@ -1,5 +1,7 @@
 # Pesantren Management System
 
+[![View Documentation](https://img.shields.io/badge/View-Documentation-blue?style=for-the-badge&logo=markdown)](./documentation.md)
+
 Sistem Manajemen Pesantren terpadu yang dirancang untuk mengotomatisasi administrasi akademik, keuangan, kesiswaan, hingga operasional koperasi pesantren dalam satu platform terintegrasi.
 
 ## 🚀 Teknologi Utama
