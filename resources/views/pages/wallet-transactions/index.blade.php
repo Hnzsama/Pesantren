@@ -272,12 +272,11 @@ new #[Lazy] class extends Component {
 
                             <flux:table.cell>
                                 <div class="flex items-center gap-2">
-                                    @if($txn->student)
-                                        <flux:avatar size="sm" :name="$txn->student->full_name" />
-                                        <span class="font-medium">{{ $txn->student->full_name }}</span>
-                                    @else
-                                        <span class="text-zinc-400">-</span>
-                                    @endif
+                                    <flux:avatar size="sm" :name="$txn->student_name ?? $txn->student?->full_name ?? '-'" />
+                                    <div class="flex flex-col">
+                                        <span class="font-medium">{{ $txn->student_name ?? $txn->student?->full_name ?? '-' }}</span>
+                                        <span class="text-xs text-zinc-500">{{ $txn->student_nis ?? $txn->student?->nis ?? '-' }}</span>
+                                    </div>
                                 </div>
                             </flux:table.cell>
 
@@ -392,18 +391,16 @@ new #[Lazy] class extends Component {
                     <flux:separator />
 
                     <!-- Student Info Card -->
-                    @if($selectedTransaction->student)
-                        <div class="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4">
-                            <flux:label class="mb-3">Santri</flux:label>
-                            <div class="flex items-center gap-3">
-                                <flux:avatar size="lg" :name="$selectedTransaction->student->full_name" />
-                                <div>
-                                    <div class="font-semibold text-lg">{{ $selectedTransaction->student->full_name }}</div>
-                                    <div class="text-sm text-zinc-500">NIS: {{ $selectedTransaction->student->nis ?? '-' }}</div>
-                                </div>
+                    <div class="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4">
+                        <flux:label class="mb-3">Santri</flux:label>
+                        <div class="flex items-center gap-3">
+                            <flux:avatar size="lg" :name="$selectedTransaction->student_name ?? $selectedTransaction->student?->full_name ?? '-'" />
+                            <div>
+                                <div class="font-semibold text-lg">{{ $selectedTransaction->student_name ?? $selectedTransaction->student?->full_name ?? '-' }}</div>
+                                <div class="text-sm text-zinc-500">NIS: {{ $selectedTransaction->student_nis ?? $selectedTransaction->student?->nis ?? '-' }}</div>
                             </div>
                         </div>
-                    @endif
+                    </div>
 
                     <!-- Amount Card -->
                     <div

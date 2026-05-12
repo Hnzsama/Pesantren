@@ -15,8 +15,12 @@ return new class extends Migration
             $table->ulid('id')->primary();
 
             $table->foreignUlid('student_id')
+                ->nullable()
                 ->constrained()
-                ->cascadeOnDelete();
+                ->nullOnDelete();
+
+            $table->string('student_name')->nullable();
+            $table->string('student_nis')->nullable();
 
             $table->foreignUlid('semester_id')
                 ->constrained()

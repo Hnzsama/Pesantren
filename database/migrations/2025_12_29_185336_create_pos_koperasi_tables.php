@@ -18,7 +18,9 @@ return new class extends Migration
             $table->string('name');
             $table->string('sku')->nullable();
             $table->enum('type', ['PRODUCT', 'SERVICE'])->default('PRODUCT');
-            $table->decimal('price', 15, 2);
+            $table->decimal('selling_price', 15, 2)->default(0);
+            $table->decimal('purchase_price', 15, 2)->default(0);
+            $table->string('image')->nullable();
             $table->integer('stock')->nullable()->comment('Only for PRODUCT type');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
@@ -31,7 +33,9 @@ return new class extends Migration
         Schema::create('product_movements', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->foreignUlid('school_id')->constrained()->cascadeOnDelete();
-            $table->foreignUlid('product_id')->constrained()->cascadeOnDelete();
+            $table->foreignUlid('product_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('product_name')->nullable();
+            $table->string('product_sku')->nullable();
             $table->enum('type', ['IN', 'OUT', 'ADJUSTMENT']);
             $table->integer('quantity');
             $table->integer('stock_before');
@@ -61,7 +65,9 @@ return new class extends Migration
         Schema::create('stock_opname_items', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->foreignUlid('stock_opname_id')->constrained()->cascadeOnDelete();
-            $table->foreignUlid('product_id')->constrained()->cascadeOnDelete();
+            $table->foreignUlid('product_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('product_name')->nullable();
+            $table->string('product_sku')->nullable();
             $table->integer('system_stock');
             $table->integer('physical_stock');
             $table->integer('difference');

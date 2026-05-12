@@ -12,6 +12,15 @@ class EventAttendanceSeeder extends Seeder
      */
     public function run(): void
     {
-        //
+        $student = \App\Models\Student::first(['*']);
+        $event = \App\Models\Event::first(['*']);
+        if ($student && $event) {
+            \App\Models\EventAttendance::create([
+                'event_id' => $event->id,
+                'student_id' => $student->id,
+                'check_in_time' => now(),
+                'status' => 'HADIR',
+            ]);
+        }
     }
 }

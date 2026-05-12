@@ -64,7 +64,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
         'name' => '',
         'type' => 'daily',
         'description' => '',
-        'level_id' => null,
+        'level_ids' => [],
     ];
 
     public function mount()
@@ -78,10 +78,12 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
         $schoolId = $user->hasRole('admin') ? $user->school_id : null;
 
         $activities = Activity::query()
-            ->with(['level'])
+            ->with(['levels'])
             ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
             ->when($this->search, fn($q) => $q->where('name', 'like', '%' . $this->search . '%'))
-            ->when($this->levelFilter, fn($q) => $q->where('level_id', $this->levelFilter))
+            ->when($this->levelFilter, function ($q) {
+                $q->whereHas('levels', fn($r) => $r->where('levels.id', $this->levelFilter));
+            })
             ->when($this->typeFilter, fn($q) => $q->where('type', $this->typeFilter))
             ->orderBy('created_at', 'desc')
             ->paginate(10);
@@ -107,7 +109,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
             'name' => $activity->name,
             'type' => $activity->type,
             'description' => $activity->description,
-            'level_id' => $activity->level_id, // Important: level_id matches schema foreign key
+            'level_ids' => $activity->levels->pluck('id')->toArray(),
         ];
         $this->modal('activity-modal')->show();
     }
@@ -118,7 +120,8 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
             'form.name' => 'required|string|max:255',
             'form.type' => 'required|in:daily,rutinan',
             'form.description' => 'required|string',
-            'form.level_id' => 'required|exists:levels,id',
+            'form.level_ids' => 'required|array|min:1',
+            'form.level_ids.*' => 'exists:levels,id',
         ]);
 
         $user = auth()->user();
@@ -129,17 +132,21 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
             'name' => $this->form['name'],
             'type' => $this->form['type'],
             'description' => $this->form['description'],
-            'level_id' => $this->form['level_id'],
         ];
 
-        if ($this->form['id']) {
-            Activity::findOrFail($this->form['id'])->update($data);
-            Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Kegiatan berhasil diperbarui.');
-        } else {
-            Activity::create($data);
-            Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Kegiatan berhasil ditambahkan.');
-        }
-
+        DB::transaction(function () use ($data) {
+            if ($this->form['id']) {
+                $activity = Activity::findOrFail($this->form['id']);
+                $activity->update($data);
+                $activity->levels()->sync($this->form['level_ids']);
+                Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Kegiatan berhasil diperbarui.');
+            } else {
+                $activity = Activity::create($data);
+                $activity->levels()->sync($this->form['level_ids']);
+                Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Kegiatan berhasil ditambahkan.');
+            }
+        });
+        
         $this->modal('activity-modal')->close();
     }
 
@@ -222,7 +229,11 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                         </flux:table.cell>
 
                         <flux:table.cell>
-                            <flux:badge size="sm">{{ $activity->level->name ?? '-' }}</flux:badge>
+                            <div class="flex flex-wrap gap-1">
+                                @foreach($activity->levels as $level)
+                                    <flux:badge size="sm" inset="top bottom">{{ $level->name }}</flux:badge>
+                                @endforeach
+                            </div>
                         </flux:table.cell>
 
                         <flux:table.cell>
@@ -274,7 +285,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                     <flux:select.option value="rutinan">Rutinan (Weekly/Monthly)</flux:select.option>
                 </flux:select>
 
-                <flux:select wire:model="form.level_id" label="Kelas" variant="listbox" placeholder="Pilih kelas...">
+                <flux:select wire:model="form.level_ids" label="Kelas" variant="listbox" multiple placeholder="Pilih satu atau lebih kelas...">
                     @foreach($levels as $level)
                         <flux:select.option value="{{ $level->id }}">{{ $level->name }}</flux:select.option>
                     @endforeach

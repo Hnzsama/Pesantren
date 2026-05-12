@@ -10,11 +10,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class EventAttendance extends Model
 {
     /** @use HasFactory<\Database\Factories\EventAttendanceFactory> */
-    use HasFactory, HasUlids;
+    use HasFactory, HasUlids, \App\Traits\HasStudentSnapshot;
 
     protected $fillable = [
         'event_id',
         'student_id',
+        'student_name',
+        'student_nis',
         'check_in_time',
         'status',
     ];

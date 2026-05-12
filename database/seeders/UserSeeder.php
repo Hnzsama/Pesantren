@@ -49,7 +49,55 @@ class UserSeeder extends Seeder
             );
             $koperasi->assignRole('admin_koperasi');
 
-            // 3. Create 10 Wali Santri
+            // 3. Create Bendahara
+            $bendahara = \App\Models\User::firstOrCreate(
+                ['email' => 'bendahara@' . strtolower(str_replace(' ', '', $school->name)) . '.com'],
+                [
+                    'name' => 'Bendahara ' . $school->name,
+                    'phone_number' => fake()->unique()->phoneNumber(),
+                    'password' => bcrypt('password'),
+                    'school_id' => $school->id,
+                ]
+            );
+            $bendahara->assignRole('bendahara');
+
+            // 4. Create Kasir
+            $kasir = \App\Models\User::firstOrCreate(
+                ['email' => 'kasir@' . strtolower(str_replace(' ', '', $school->name)) . '.com'],
+                [
+                    'name' => 'Kasir ' . $school->name,
+                    'phone_number' => fake()->unique()->phoneNumber(),
+                    'password' => bcrypt('password'),
+                    'school_id' => $school->id,
+                ]
+            );
+            $kasir->assignRole('kasir');
+
+            // 5. Create Pengurus
+            $pengurus = \App\Models\User::firstOrCreate(
+                ['email' => 'pengurus@' . strtolower(str_replace(' ', '', $school->name)) . '.com'],
+                [
+                    'name' => 'Pengurus ' . $school->name,
+                    'phone_number' => fake()->unique()->phoneNumber(),
+                    'password' => bcrypt('password'),
+                    'school_id' => $school->id,
+                ]
+            );
+            $pengurus->assignRole('pengurus');
+
+            // 6. Create Guru
+            $guru = \App\Models\User::firstOrCreate(
+                ['email' => 'guru@' . strtolower(str_replace(' ', '', $school->name)) . '.com'],
+                [
+                    'name' => 'Guru ' . $school->name,
+                    'phone_number' => fake()->unique()->phoneNumber(),
+                    'password' => bcrypt('password'),
+                    'school_id' => $school->id,
+                ]
+            );
+            $guru->assignRole('guru');
+
+            // 4. Create 10 Wali Santri
             for ($i = 1; $i <= 10; $i++) {
                 $wali = \App\Models\User::firstOrCreate(
                     ['email' => "wali{$i}@" . strtolower(str_replace(' ', '', $school->name)) . '.com'],

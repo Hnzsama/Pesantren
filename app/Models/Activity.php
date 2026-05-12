@@ -11,16 +11,16 @@ class Activity extends Model
 {
     use HasFactory, HasUlids, HasSchoolScope;
 
-    protected $fillable = ['school_id', 'level_id', 'name', 'type', 'description'];
+    protected $fillable = ['school_id', 'name', 'type', 'description'];
 
     public function school()
     {
         return $this->belongsTo(\App\Models\School::class);
     }
 
-    public function level()
+    public function levels()
     {
-        return $this->belongsTo(\App\Models\Level::class);
+        return $this->belongsToMany(\App\Models\Level::class, 'activity_level');
     }
 
     public function attendances()

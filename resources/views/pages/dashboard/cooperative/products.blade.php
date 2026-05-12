@@ -150,6 +150,8 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                 ProductMovement::create([
                     'school_id' => $product->school_id,
                     'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'product_sku' => $product->sku,
                     'type' => 'IN',
                     'quantity' => $product->stock,
                     'stock_before' => 0,
@@ -207,6 +209,8 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
         ProductMovement::create([
             'school_id' => $product->school_id,
             'product_id' => $product->id,
+            'product_name' => $product->name,
+            'product_sku' => $product->sku,
             'type' => 'IN',
             'quantity' => $this->addStockQty,
             'stock_before' => $oldStock,

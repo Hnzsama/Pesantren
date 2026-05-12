@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class StudentPermission extends Model
 {
-    use HasFactory, \App\Traits\HasSchoolScope, \Illuminate\Database\Eloquent\Concerns\HasUlids;
+    use HasFactory, \App\Traits\HasSchoolScope, \Illuminate\Database\Eloquent\Concerns\HasUlids, \App\Traits\HasStudentSnapshot;
 
     protected $guarded = [];
 

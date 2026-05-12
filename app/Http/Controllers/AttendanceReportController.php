@@ -59,6 +59,23 @@ class AttendanceReportController extends Controller
             $matrix[$record->student_id][$record->activity_id] = $record->status;
         }
 
+        // Fill in automatic permissions
+        foreach ($students as $student) {
+            $hasPermission = \App\Models\StudentPermission::where('student_id', $student->id)
+                ->where('status', 'approved')
+                ->whereDate('start_date', '<=', $date)
+                ->whereDate('end_date', '>=', $date)
+                ->exists();
+
+            if ($hasPermission) {
+                foreach ($activities as $activity) {
+                    if (!isset($matrix[$student->id][$activity->id])) {
+                        $matrix[$student->id][$activity->id] = 'permission';
+                    }
+                }
+            }
+        }
+
         if ($specificActivity) {
             $title = 'Laporan Absensi: ' . $specificActivity->name;
         } else {

@@ -14,6 +14,8 @@ class ProductMovement extends Model
     protected $fillable = [
         'school_id',
         'product_id',
+        'product_name',
+        'product_sku',
         'type',
         'quantity',
         'stock_before',

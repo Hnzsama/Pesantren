@@ -10,12 +10,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Bill extends Model
 {
     /** @use HasFactory<\Database\Factories\BillFactory> */
-    use \App\Traits\HasSchoolScope, HasFactory, HasUlids;
+    use \App\Traits\HasSchoolScope, HasFactory, HasUlids, \App\Traits\HasStudentSnapshot;
 
     protected $fillable = [
         'school_id',
         'invoice_code',
         'student_id',
+        'student_name',
+        'student_nis',
+        'student_class',
         'event_id',
         'bill_category_id',
         'title',

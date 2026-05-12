@@ -90,13 +90,13 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
     public function with(): array
     {
         $user = auth()->user();
-        $schoolId = $user->hasRole('admin') ? $user->school_id : null;
+        $schoolId = $user->hasAnyRole(['admin', 'guru']) ? $user->school_id : null;
 
         // Sessions for list view
         $sessions = ActivityAttendance::query()
             ->select('date', 'activity_id', 'school_id')
             ->distinct()
-            ->with(['activity.level'])
+            ->with(['activity.levels'])
             ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
             ->when($this->dateFilter, fn($q) => $q->where('date', $this->dateFilter))
             ->when($this->activityFilter, fn($q) => $q->where('activity_id', $this->activityFilter))
@@ -115,7 +115,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
 
         // Activities for filters
         $activities = Activity::query()
-            ->with('level')
+            ->with('levels')
             ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
             ->orderBy('name')
             ->get();
@@ -125,7 +125,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
         if (!empty($this->selectedLevels)) {
             $availableActivities = Activity::query()
                 ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
-                ->whereIn('level_id', $this->selectedLevels)
+                ->whereHas('levels', fn($q) => $q->whereIn('levels.id', $this->selectedLevels))
                 ->orderBy('name')
                 ->get();
         }
@@ -210,7 +210,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
         }
 
         $user = auth()->user();
-        $schoolId = $user->hasRole('admin') ? $user->school_id : null;
+        $schoolId = $user->hasAnyRole(['admin', 'guru']) ? $user->school_id : null;
 
         // Find student card by card_number
         $studentCard = StudentCard::query()
@@ -331,9 +331,9 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
 
         <flux:select wire:model.live="activityFilter" label="Kegiatan" variant="listbox" placeholder="Semua Kegiatan">
             <flux:select.option value="">Semua Kegiatan</flux:select.option>
-            @foreach($activities->unique(fn($a) => $a->name . ($a->level_id ?? '')) as $activity)
+            @foreach($activities as $activity)
                 <flux:select.option value="{{ $activity->id }}">
-                    {{ $activity->name }} - {{ $activity->level->name ?? 'Semua Kelas' }}
+                    {{ $activity->name }} - ({{ $activity->levels->pluck('name')->implode(', ') ?: 'Semua Kelas' }})
                 </flux:select.option>
             @endforeach
         </flux:select>
@@ -363,7 +363,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                             <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $session->activity->name ?? '-' }}
                             </div>
                             <div class="text-xs text-zinc-500">
-                                {{ $session->activity->level->name ?? 'Semua Kelas' }} •
+                                {{ $session->activity->levels->pluck('name')->implode(', ') ?: 'Semua Kelas' }} •
                                 {{ $session->activity->type ?? '' }}
                             </div>
                         </flux:table.cell>
@@ -433,7 +433,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                             placeholder="Pilih Kegiatan (bisa lebih dari 1)" :disabled="empty($selectedLevels)">
                             @foreach($availableActivities as $activity)
                                 <flux:select.option value="{{ $activity->id }}">
-                                    {{ $activity->name }} - {{ $activity->level->name ?? 'Semua Kelas' }}
+                                    {{ $activity->name }} - ({{ $activity->levels->pluck('name')->implode(', ') ?: 'Semua Kelas' }})
                                 </flux:select.option>
                             @endforeach
                         </flux:select>

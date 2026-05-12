@@ -15,7 +15,7 @@ class WalletTransactionSeeder extends Seeder
     public function run(): void
     {
         // Get first student and admin
-        $student = Student::first();
+        $student = Student::first(['*']);
         $admin = User::role('admin')->first();
 
         if (!$student || !$admin) {
@@ -24,6 +24,21 @@ class WalletTransactionSeeder extends Seeder
         }
 
         $transactions = [
+            [
+                'school_id' => $student->school_id,
+                'invoice_code' => 'INV-TOP-' . time() . '-000',
+                'student_id' => $student->id,
+                'operator_id' => $admin->id,
+                'pic_user_id' => $admin->id,
+                'type' => 'CREDIT',
+                'category' => 'TOPUP',
+                'amount' => 1000000,
+                'payment_fee' => 0,
+                'admin_fee' => 0,
+                'description' => 'Top up saldo manual (Tunai)',
+                'payment_method' => 'cash',
+                'status' => 'PAID',
+            ],
             [
                 'school_id' => $student->school_id,
                 'invoice_code' => 'INV-TOP-' . time() . '-001',

@@ -133,8 +133,8 @@ new #[Lazy] class extends Component {
             @forelse ($this->reports as $report)
                 <flux:table.row wire:key="{{ $report->id }}">
                     <flux:table.cell>
-                        <div class="font-medium">{{ $report->student->full_name }}</div>
-                        <div class="text-xs text-zinc-500">{{ $report->student->nis }}</div>
+                        <div class="font-medium">{{ $report->student_name ?? $report->student?->full_name ?? '-' }}</div>
+                        <div class="text-xs text-zinc-500">{{ $report->student_nis ?? $report->student?->nis ?? '-' }}</div>
                     </flux:table.cell>
                     <flux:table.cell>{{ $report->semester->academicYear->name }}</flux:table.cell>
                     <flux:table.cell>
@@ -185,7 +185,7 @@ new #[Lazy] class extends Component {
                 <div>
                     <flux:heading size="lg">Detail Rapor</flux:heading>
                     <flux:subheading>
-                        {{ $detailReport->student->full_name }} • {{ $detailReport->semester->academicYear->name }}
+                        {{ $detailReport->student_name ?? $detailReport->student?->full_name ?? '-' }} • {{ $detailReport->semester->academicYear->name }}
                         {{ $detailReport->semester->type }}
                     </flux:subheading>
                 </div>
@@ -195,8 +195,8 @@ new #[Lazy] class extends Component {
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <flux:label class="mb-1">Santri</flux:label>
-                        <div class="font-medium">{{ $detailReport->student->full_name }}</div>
-                        <div class="text-sm text-zinc-500">{{ $detailReport->student->nis }}</div>
+                        <div class="font-medium">{{ $detailReport->student_name ?? $detailReport->student?->full_name ?? '-' }}</div>
+                        <div class="text-sm text-zinc-500">{{ $detailReport->student_nis ?? $detailReport->student?->nis ?? '-' }}</div>
                     </div>
                     <div>
                         <flux:label class="mb-1">Sekolah</flux:label>

@@ -12,7 +12,7 @@ new class extends Component {
     public $student_id = '';
     public $scan_input = '';
     public $selected_bill_id = '';
-    public $admin_fee = 0;
+    public $admin_fee = '';
     public $last_invoice = null;
 
     public function with(): array

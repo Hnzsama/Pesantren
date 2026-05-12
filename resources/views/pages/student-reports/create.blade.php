@@ -259,6 +259,9 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
             $report->update($data);
             Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Rapor berhasil diperbarui.');
         } else {
+            $student = Student::find($this->student_id);
+            $data['student_name'] = $student?->full_name;
+            $data['student_nis'] = $student?->nis;
             StudentReport::create($data);
             Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Rapor berhasil ditambahkan.');
         }

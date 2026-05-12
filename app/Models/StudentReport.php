@@ -9,10 +9,12 @@ use Illuminate\Support\Facades\Storage;
 
 class StudentReport extends Model
 {
-    use HasUlids;
+    use HasUlids, \App\Traits\HasStudentSnapshot;
 
     protected $fillable = [
         'student_id',
+        'student_name',
+        'student_nis',
         'semester_id',
         'school_id',
         'file_path',

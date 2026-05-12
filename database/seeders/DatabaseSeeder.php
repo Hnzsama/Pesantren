@@ -39,6 +39,12 @@ class DatabaseSeeder extends Seeder
             WalletTransactionSeeder::class,
             FeedbackSeeder::class,
 
+            // Attendance & Permissions
+            ActivityAttendanceSeeder::class,
+            EventAttendanceSeeder::class,
+            StudentPermissionSeeder::class,
+            StudentReportSeeder::class,
+
             // Cooperative
             ProductSeeder::class,
         ]);

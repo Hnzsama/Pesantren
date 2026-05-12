@@ -128,6 +128,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
             $permission->update([
                 'student_id' => $this->student_id,
                 'student_name' => $student->full_name, // Update name as backup
+                'student_nis' => $student->nis,
                 'reason' => $this->reason,
                 'start_date' => $this->start_date,
                 'end_date' => $this->end_date,
@@ -140,6 +141,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                 'school_id' => $schoolId,
                 'student_id' => $this->student_id,
                 'student_name' => $student->full_name,
+                'student_nis' => $student->nis,
                 'reason' => $this->reason,
                 'start_date' => $this->start_date,
                 'end_date' => $this->end_date,

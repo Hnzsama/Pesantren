@@ -31,9 +31,9 @@
                             @elseif(!empty($card->student->school->logo_path))
                                 @php
                                     $logoPath = $card->student->school->logo_path;
-                                    $fullPath = storage_path('app/public/' . $logoPath);
+                                    $fullPath = public_path('storage/public/' . $logoPath);
                                     $base64 = '';
-                                    if (file_exists($fullPath)) {
+                                    if ($logoPath && file_exists($fullPath)) {
                                         $type = pathinfo($fullPath, PATHINFO_EXTENSION);
                                         $data = file_get_contents($fullPath);
                                         $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
@@ -42,7 +42,7 @@
                                 @if($base64)
                                     <img src="{{ $base64 }}" alt="School Logo">
                                 @else
-                                    <img src="{{ asset('storage/' . $logoPath) }}" alt="School Logo" onerror="this.style.display='none'">
+                                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($logoPath) }}" alt="School Logo" onerror="this.style.display='none'">
                                 @endif
                             @else
                                 <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="{{ $noBackground ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.8)' }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

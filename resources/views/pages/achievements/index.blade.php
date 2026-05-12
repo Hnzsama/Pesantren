@@ -99,7 +99,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component
                         </flux:table.cell>
 
                         <flux:table.cell>
-                            {{ $achievement->student->full_name ?? '-' }}
+                            {{ $achievement->student_name ?? $achievement->student?->full_name ?? '-' }}
                         </flux:table.cell>
 
                         <flux:table.cell>
@@ -149,7 +149,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component
                     <flux:heading size="lg">{{ $detailAchievement->title }}</flux:heading>
                     <flux:subheading>
                         {{ $detailAchievement->date_achieved->isoFormat('D MMMM Y') }} •
-                        {{ $detailAchievement->student->full_name ?? 'Umum' }}
+                        {{ $detailAchievement->student_name ?? $detailAchievement->student?->full_name ?? 'Umum' }}
                     </flux:subheading>
                 </div>
 

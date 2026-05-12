@@ -75,6 +75,8 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                 StockOpnameItem::create([
                     'stock_opname_id' => $opname->id,
                     'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'product_sku' => $product->sku,
                     'system_stock' => $product->stock ?? 0,
                     'physical_stock' => 0,
                     'difference' => -($product->stock ?? 0),
@@ -134,6 +136,8 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                     ProductMovement::create([
                         'school_id' => $product->school_id,
                         'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'product_sku' => $product->sku,
                         'type' => 'ADJUSTMENT',
                         'quantity' => abs($item->difference),
                         'stock_before' => $oldStock,
@@ -237,37 +241,47 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                 </div>
 
                 <!-- Scrollable container for the stock opname items table -->
-                <div class="max-h-[500px] overflow-y-auto overflow-x-auto border rounded-xl custom-scrollbar">
-                    <flux:table class="min-w-[600px] md:min-w-full">
+                <div class="max-h-[550px] overflow-y-auto overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-2xl custom-scrollbar shadow-inner bg-zinc-50/50 dark:bg-zinc-900/50 px-6 py-4">
+                    <flux:table class="min-w-[700px] md:min-w-full">
                         <flux:table.columns>
                             <flux:table.column>Produk</flux:table.column>
-                            <flux:table.column class="whitespace-nowrap">Stok Sistem</flux:table.column>
-                            <flux:table.column class="whitespace-nowrap">Stok Fisik</flux:table.column>
-                            <flux:table.column class="whitespace-nowrap">Selisih</flux:table.column>
+                            <flux:table.column align="center" class="whitespace-nowrap">Stok Sistem</flux:table.column>
+                            <flux:table.column align="center" class="whitespace-nowrap">Stok Fisik</flux:table.column>
+                            <flux:table.column align="end" class="whitespace-nowrap">Selisih</flux:table.column>
                         </flux:table.columns>
                         <flux:table.rows>
                             @foreach ($activeOpname->items as $item)
-                                <flux:table.row :key="$item->id">
+                                <flux:table.row :key="$item->id" class="hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 transition-colors">
                                     <flux:table.cell>
-                                        <div class="flex flex-col min-w-[200px]">
-                                            <span class="font-medium text-sm line-clamp-2">{{ $item->product->name }}</span>
-                                            <span class="text-xs text-zinc-500">{{ $item->product->sku }}</span>
+                                        <div class="flex flex-col min-w-[250px] py-1">
+                                            <span class="font-bold text-sm text-zinc-800 dark:text-zinc-200 line-clamp-1 uppercase">{{ $item->product_name }}</span>
+                                            <span class="text-[10px] font-mono text-zinc-500 tracking-wider">{{ $item->product_sku ?? '-' }}</span>
                                         </div>
                                     </flux:table.cell>
-                                    <flux:table.cell class="text-center md:text-left">{{ $item->system_stock }}
+                                    <flux:table.cell align="center" class="font-semibold text-zinc-600 dark:text-zinc-400">
+                                        {{ $item->system_stock }}
                                     </flux:table.cell>
-                                    <flux:table.cell>
+                                    <flux:table.cell align="center">
                                         @if ($activeOpname->status === 'DRAFT')
                                             <flux:input type="number"
-                                                wire:model.live.debounce.500ms="physicalStocks.{{ $item->product_id }}" size="sm"
-                                                class="w-20" />
+                                                wire:model.live.debounce.500ms="physicalStocks.{{ $item->product_id }}" 
+                                                size="sm"
+                                                class="w-24 text-center font-bold !bg-white dark:!bg-zinc-950 shadow-sm" />
                                         @else
-                                            {{ $item->physical_stock }}
+                                            <span class="font-bold text-zinc-800 dark:text-zinc-200">{{ $item->physical_stock }}</span>
                                         @endif
                                     </flux:table.cell>
-                                    <flux:table.cell
-                                        class="font-bold text-center md:text-left {{ $item->difference < 0 ? 'text-red-500' : ($item->difference > 0 ? 'text-green-500' : '') }}">
-                                        {{ $item->difference > 0 ? '+' : '' }}{{ $item->difference }}
+                                    <flux:table.cell align="end">
+                                        <div class="flex flex-col items-end">
+                                            <span class="font-black text-sm {{ $item->difference < 0 ? 'text-red-500' : ($item->difference > 0 ? 'text-emerald-500' : 'text-zinc-400') }}">
+                                                {{ $item->difference > 0 ? '+' : '' }}{{ $item->difference }}
+                                            </span>
+                                            @if($item->difference != 0)
+                                                <span class="text-[9px] uppercase font-bold {{ $item->difference < 0 ? 'text-red-400/70' : 'text-emerald-400/70' }}">
+                                                    {{ $item->difference < 0 ? 'Kurang' : 'Lebih' }}
+                                                </span>
+                                            @endif
+                                        </div>
                                     </flux:table.cell>
                                 </flux:table.row>
                             @endforeach

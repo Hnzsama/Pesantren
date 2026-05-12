@@ -22,7 +22,7 @@ new #[Lazy] #[Layout('layouts.app')] #[Title('Top Up Manual')] class extends Com
 
     public $student_id = '';
     public $amount = '';
-    public $admin_fee = 2000;
+    public $admin_fee = '';
     public $description = '';
     public $payment_method = 'cash';
     public $last_invoice = null;
@@ -46,7 +46,7 @@ new #[Lazy] #[Layout('layouts.app')] #[Title('Top Up Manual')] class extends Com
         $this->validate([
             'student_id' => 'required|exists:students,id',
             'amount' => 'required|numeric|min:10000',
-            'admin_fee' => 'required|numeric|min:0',
+            'admin_fee' => 'nullable|numeric|min:0',
         ], [
             'student_id.required' => 'Pilih santri terlebih dahulu',
             'amount.required' => 'Masukkan nominal top up',
@@ -71,8 +71,7 @@ new #[Lazy] #[Layout('layouts.app')] #[Title('Top Up Manual')] class extends Com
 
             Flux::toast(variant: 'success', heading: 'Berhasil', text: 'Top up manual untuk ' . $student->full_name . ' berhasil diproses.');
             
-            $this->reset(['student_id', 'amount', 'description']);
-            $this->admin_fee = 2000;
+            $this->reset(['student_id', 'amount', 'description', 'admin_fee']);
 
         } catch (\Exception $e) {
             Flux::toast(variant: 'danger', heading: 'Gagal', text: $e->getMessage());
