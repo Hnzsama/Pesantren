@@ -9,9 +9,9 @@ use App\Traits\HasSchoolScope;
 
 class ActivityAttendance extends Model
 {
-    use HasFactory, HasUlids, HasSchoolScope;
+    use HasFactory, HasUlids, HasSchoolScope, \App\Traits\HasStudentSnapshot;
 
-    protected $fillable = ['school_id', 'student_id', 'activity_id', 'date', 'status', 'remarks'];
+    protected $fillable = ['school_id', 'student_id', 'student_name', 'student_nis', 'activity_id', 'date', 'status', 'remarks'];
 
     protected $casts = [
         'date' => 'date',

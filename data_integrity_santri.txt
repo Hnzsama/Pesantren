@@ -1,0 +1,36 @@
+DAFTAR INTEGRITAS DATA PENGELOLAAN SANTRI
+========================================
+
+Berikut adalah daftar tabel/modul yang WAJIB menerapkan "Data Capture" (Denormalisasi) 
+untuk mencegah kehilangan riwayat saat data Master Santri dihapus atau diubah (Lulus/Keluar).
+
+1. MODUL KEUANGAN (PRIORITAS UTAMA)
+----------------------------------
+A. Tabel: bills (Tagihan)
+   - Kolom Capture: student_name, student_nis, class_name
+   - Alasan: Laporan pendapatan sekolah harus tetap akurat selamanya.
+
+B. Tabel: wallet_transactions (Transaksi Saldo)
+   - Kolom Capture: student_name, student_nis
+   - Alasan: Bukti setoran (Top Up) dan penarikan uang saku adalah data sensitif.
+
+2. MODUL AKADEMIK & KEDISIPLINAN
+-------------------------------
+A. Tabel: attendances (Presensi Harian)
+   - Kolom Capture: student_name, student_nis, class_name
+   - Alasan: Keperluan laporan statistik kehadiran jangka panjang.
+
+B. Tabel: student_permissions (Perizinan Pulang/Keluar)
+   - Kolom Capture: student_name, student_nis
+   - Alasan: Arsip riwayat perilaku dan mobilitas santri.
+
+C. Tabel: achievements / student_reports (Prestasi & Laporan)
+   - Kolom Capture: student_name, student_nis
+   - Alasan: Data prestasi santri tetap tersimpan meskipun santri sudah menjadi alumni.
+
+STRATEGI MIGRASI DATABASE:
+-------------------------
+1. Mengubah onDelete('cascade') menjadi onDelete('set null') pada student_id.
+2. Menambahkan kolom snapshot (nama, nis, kelas) pada tabel-tabel terkait.
+3. Melakukan backfill data lama (menyalin data dari tabel students ke kolom baru).
+4. Update logic pada Repository/Service untuk otomatis menyimpan snapshot saat insert.

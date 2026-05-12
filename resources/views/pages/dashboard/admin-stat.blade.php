@@ -233,7 +233,7 @@ new #[Lazy] #[Layout('layouts.app')] #[Title('Dashboard')] class extends Compone
         </flux:card>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Quick Actions -->
         <flux:card>
             <flux:heading size="lg" class="mb-4">Aksi Cepat</flux:heading>

@@ -14,12 +14,13 @@ return new class extends Migration
         Schema::create('student_permissions', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->foreignUlid('school_id')->nullable()->constrained('schools')->cascadeOnDelete(); // Consolidation
-            $table->foreignUlid('student_id')->nullable()->constrained('students')->cascadeOnDelete(); // Consolidation
-            $table->string('student_name'); // Kept for history? Or should be removed if student_id is mandatory? Leaving as is to be safe.
+            $table->foreignUlid('student_id')->nullable()->constrained('students')->nullOnDelete();
+            $table->string('student_name')->nullable();
+            $table->string('student_nis')->nullable();
             $table->text('reason');
             $table->date('start_date');
             $table->date('end_date');
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->string('status')->default('pending');
             $table->text('admin_note')->nullable();
             $table->timestamps();
         });

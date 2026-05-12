@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::create('activity_attendances', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->foreignUlid('school_id')->constrained()->cascadeOnDelete();
-            $table->foreignUlid('student_id')->constrained()->cascadeOnDelete();
+            $table->foreignUlid('student_id')->nullable()->constrained('students')->nullOnDelete();
+            $table->string('student_name')->nullable();
+            $table->string('student_nis')->nullable();
             $table->foreignUlid('activity_id')->constrained()->cascadeOnDelete();
             $table->date('date');
             $table->string('status'); // present, late, absent, permission

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AdminDeposit;
 use App\Services\FinancialService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class AdminDashboardController extends Controller
@@ -18,7 +19,7 @@ class AdminDashboardController extends Controller
      */
     public function index(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $schoolId = $user->school_id;
 
         // Date Filter Logic

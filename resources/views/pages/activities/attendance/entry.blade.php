@@ -47,14 +47,12 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
 
         $query = Activity::query()
             ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
-            ->orderBy('name');
-
-        if ($this->levelId) {
-            $query->where(function ($q) {
-                $q->where('level_id', $this->levelId)
-                    ->orWhereNull('level_id');
+            ->orderBy('name')
+            ->when($this->levelId, function ($q) {
+                $q->whereHas('levels', function ($query) {
+                    $query->where('levels.id', $this->levelId);
+                });
             });
-        }
 
         $this->activities = $query->get();
     }
@@ -128,7 +126,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
         ]);
 
         $user = auth()->user();
-        $schoolId = $user->hasRole('admin') ? $user->school_id : null;
+        $schoolId = $user->hasAnyRole(['admin', 'guru']) ? $user->school_id : null;
         if (!$schoolId) {
             $activity = Activity::find($this->activityId);
             $schoolId = $activity->school_id;
@@ -147,6 +145,8 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                     ],
                     [
                         'school_id' => $schoolId,
+                        'student_name' => $student->full_name,
+                        'student_nis' => $student->nis,
                         'status' => $status,
                         'remarks' => $remark,
                     ]
@@ -184,8 +184,10 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
         </flux:select>
 
         <div class="flex items-end">
+            @if(!auth()->user()->hasRole('guru'))
             <flux:button wire:click="save" variant="primary" icon="document-check" class="w-full"
                 :disabled="empty($students)">Simpan Data</flux:button>
+            @endif
         </div>
     </div>
 
@@ -208,16 +210,17 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                             </flux:table.cell>
 
                             <flux:table.cell>
+                                @php $isGuru = auth()->user()->hasRole('guru'); @endphp
                                 <flux:radio.group wire:model="attendance.{{ $student->id }}" variant="segmented" size="sm">
-                                    <flux:radio value="present" label="Hadir" />
-                                    <flux:radio value="late" label="Telat" />
-                                    <flux:radio value="permission" label="Ijin" />
-                                    <flux:radio value="absent" label="Alpa" />
+                                    <flux:radio value="present" label="Hadir" :disabled="$isGuru" />
+                                    <flux:radio value="late" label="Telat" :disabled="$isGuru" />
+                                    <flux:radio value="permission" label="Ijin" :disabled="$isGuru" />
+                                    <flux:radio value="absent" label="Alpa" :disabled="$isGuru" />
                                 </flux:radio.group>
                             </flux:table.cell>
 
                             <flux:table.cell>
-                                <flux:input wire:model="remarks.{{ $student->id }}" size="sm" placeholder="Keterangan..." />
+                                <flux:input wire:model="remarks.{{ $student->id }}" size="sm" placeholder="Keterangan..." :disabled="$isGuru" />
                             </flux:table.cell>
                         </flux:table.row>
                     @empty

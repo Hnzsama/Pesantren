@@ -29,7 +29,12 @@ class FinancialService
                 })
                 ->sum('amount');
 
-            return $gatewayTopups + $gatewayBills;
+            $platformFees = WalletTransaction::where('school_id', $schoolId)
+                ->where('payment_method', 'cash')
+                ->where('category', 'TOPUP')
+                ->sum('admin_fee');
+
+            return ($gatewayTopups + $gatewayBills) - $platformFees;
         });
     }
 

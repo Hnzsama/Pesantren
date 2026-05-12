@@ -21,8 +21,11 @@ class RoleSeeder extends Seeder
             'super_admin',
             'admin',
             'admin_koperasi',
-            'wali_santri',
             'kasir',
+            'bendahara',
+            'guru',
+            'pengurus',
+            'wali_santri',
         ];
 
         foreach ($roles as $role) {

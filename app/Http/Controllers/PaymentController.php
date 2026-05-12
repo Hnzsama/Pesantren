@@ -56,7 +56,7 @@ class PaymentController extends Controller
     {
         $request->validate([
             'student_id' => 'required|exists:students,id',
-            'amount' => 'required|numeric|min:1000', // Nominal Topup (Net)
+            'amount' => 'required|numeric|min:10000', // Nominal Topup (Net)
             'admin_fee' => 'nullable|numeric|min:0', // Biaya Admin
             'payment_fee' => 'nullable|numeric|min:0', // Biaya Payment Gateway
         ]);

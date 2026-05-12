@@ -14,10 +14,13 @@ return new class extends Migration
         Schema::create('attendances', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->foreignUlid('school_id')->constrained()->cascadeOnDelete();
-            $table->foreignUlid('student_id')->constrained('students')->cascadeOnDelete();
+            $table->foreignUlid('student_id')->nullable()->constrained('students')->nullOnDelete();
+            $table->string('student_name')->nullable();
+            $table->string('student_nis')->nullable();
+            $table->string('student_class')->nullable();
             $table->date('date');
             $table->time('clock_in')->nullable();
-            $table->enum('status', ['PRESENT', 'LATE', 'ABSENT', 'EXCUSED']);
+            $table->string('status');
             $table->timestamps();
         });
     }

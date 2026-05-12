@@ -226,6 +226,9 @@ new #[Lazy] class extends Component {
                         'school_id' => $schoolId,
                         'invoice_code' => 'INV-BILL-' . time() . '-' . rand(1000, 9999),
                         'student_id' => $student->id,
+                        'student_name' => $student->full_name,
+                        'student_nis' => $student->nis,
+                        'student_class' => $student->level?->name ?? '-',
                         'bill_category_id' => $this->bill_category_id,
                         'title' => $this->title,
                         'amount' => $this->amount,
@@ -346,12 +349,11 @@ new #[Lazy] class extends Component {
 
                             <flux:table.cell>
                                 <div class="flex items-center gap-2">
-                                    @if($bill->student)
-                                        <flux:avatar size="sm" :name="$bill->student->full_name" />
-                                        <span class="font-medium">{{ $bill->student->full_name }}</span>
-                                    @else
-                                        <span class="text-zinc-400">-</span>
-                                    @endif
+                                    <flux:avatar size="sm" :name="$bill->student_name ?? $bill->student?->full_name ?? '-'" />
+                                    <div class="flex flex-col">
+                                        <span class="font-medium">{{ $bill->student_name ?? $bill->student?->full_name ?? '-' }}</span>
+                                        <span class="text-xs text-zinc-500">{{ $bill->student_nis ?? $bill->student?->nis ?? '-' }} • {{ $bill->student_class ?? '-' }}</span>
+                                    </div>
                                 </div>
                             </flux:table.cell>
 
@@ -648,18 +650,17 @@ new #[Lazy] class extends Component {
                     <flux:separator />
 
                     <!-- Student Info -->
-                    @if($selectedBill->student)
-                        <div class="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4">
-                            <flux:label class="mb-3">Santri</flux:label>
-                            <div class="flex items-center gap-3">
-                                <flux:avatar size="lg" :name="$selectedBill->student->full_name" />
-                                <div>
-                                    <div class="font-semibold text-lg">{{ $selectedBill->student->full_name }}</div>
-                                    <div class="text-sm text-zinc-500">NIS: {{ $selectedBill->student->nis ?? '-' }}</div>
-                                </div>
+                    <div class="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4">
+                        <flux:label class="mb-3">Santri</flux:label>
+                        <div class="flex items-center gap-3">
+                            <flux:avatar size="lg" :name="$selectedBill->student_name ?? $selectedBill->student?->full_name ?? '-'" />
+                            <div>
+                                <div class="font-semibold text-lg">{{ $selectedBill->student_name ?? $selectedBill->student?->full_name ?? '-' }}</div>
+                                <div class="text-sm text-zinc-500">NIS: {{ $selectedBill->student_nis ?? $selectedBill->student?->nis ?? '-' }}</div>
+                                <div class="text-xs text-zinc-400">{{ $selectedBill->student_class ?? '-' }}</div>
                             </div>
                         </div>
-                    @endif
+                    </div>
 
                     <!-- Amount Card -->
                     <div

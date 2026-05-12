@@ -102,6 +102,8 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
             'title' => $this->title,
             'school_id' => $schoolId,
             'student_id' => $this->student_id ?: null,
+            'student_name' => $student?->full_name,
+            'student_nis' => $student?->nis,
             'date_achieved' => $this->date_achieved,
             'description' => $this->description,
             'images' => $imagePaths,

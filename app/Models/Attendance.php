@@ -10,10 +10,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Attendance extends Model
 {
     /** @use HasFactory<\Database\Factories\AttendanceFactory> */
-    use HasFactory, HasUlids, \App\Traits\HasSchoolScope;
+    use HasFactory, HasUlids, \App\Traits\HasSchoolScope, \App\Traits\HasStudentSnapshot;
 
     protected $fillable = [
         'student_id',
+        'student_name',
+        'student_nis',
+        'student_class',
         'school_id',
         'date',
         'clock_in',

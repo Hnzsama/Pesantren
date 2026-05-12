@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Models\Student;
 use App\Models\User;
 use App\Models\WalletTransaction;
+use App\Models\WalletTransactionItem;
+use App\Models\Product;
+use App\Models\ProductMovement;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -53,6 +56,11 @@ class TransactionService
         if ($amount < 1000) {
             throw new \Exception('Nominal penarikan minimal Rp 1.000');
         }
+
+        // 6. Minimum remaining balance check
+        if (($student->wallet_balance - $amount) < 500000) {
+            throw new \Exception('Saldo minimal Rp 500.000 harus tersisa di dompet. Saldo tersedia yang bisa ditarik: Rp ' . number_format(max(0, $student->wallet_balance - 500000), 0, ',', '.'));
+        }
     }
 
     /**
@@ -76,6 +84,8 @@ class TransactionService
                 'school_id' => $student->school_id,
                 'invoice_code' => 'WITHDRAW-' . strtoupper(uniqid()),
                 'student_id' => $student->id,
+                'student_name' => $student->full_name,
+                'student_nis' => $student->nis,
                 'pic_user_id' => $admin->id,
                 'operator_id' => $admin->id, // Set operator ID
                 'type' => 'DEBIT',
@@ -97,10 +107,10 @@ class TransactionService
      * 
      * @throws \Exception
      */
-    public function processTopup(Student $student, float $amount, User $admin): WalletTransaction
+    public function processTopup(Student $student, float $amount, User $admin, float $adminFee = 0, ?string $description = null, string $paymentMethod = 'cash'): WalletTransaction
     {
-        return DB::transaction(function () use ($student, $amount, $admin) {
-            // Credit student balance
+        return DB::transaction(function () use ($student, $amount, $admin, $adminFee, $description, $paymentMethod) {
+            // Credit student balance (net amount)
             $student->increment('wallet_balance', $amount);
 
             // Create transaction record
@@ -108,17 +118,23 @@ class TransactionService
                 'school_id' => $student->school_id,
                 'invoice_code' => 'TOPUP-' . strtoupper(uniqid()),
                 'student_id' => $student->id,
+                'student_name' => $student->full_name,
+                'student_nis' => $student->nis,
                 'pic_user_id' => $admin->id,
                 'operator_id' => $admin->id,
                 'type' => 'CREDIT',
                 'category' => 'TOPUP',
                 'amount' => $amount,
-                'payment_method' => 'cash',
+                'admin_fee' => $adminFee, // In this system, admin_fee = platform fee
+                'payment_method' => $paymentMethod,
                 'status' => 'PAID',
-                'description' => 'Topup Tunai - Teller: ' . $admin->name,
+                'description' => $description ?? ('Topup Manual (' . ucfirst($paymentMethod) . ') - Teller: ' . $admin->name),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            // Clear financial cache
+            \Illuminate\Support\Facades\Cache::forget("school_{$student->school_id}_gateway_balance");
 
             return $transaction;
         });
@@ -168,10 +184,11 @@ class TransactionService
      */
     public function getTodaysWithdrawalSum(Student $student): float
     {
-        return WalletTransaction::where('student_id', $student->id)
-            ->where('type', 'DEBIT')
-            ->where('payment_method', 'cash')
-            ->whereDate('created_at', Carbon::today())
+        return WalletTransaction::query()
+            ->where('student_id', '=', $student->id, 'and')
+            ->where('type', '=', 'DEBIT', 'and')
+            ->where('payment_method', '=', 'cash', 'and')
+            ->whereDate('created_at', '=', Carbon::today(), 'and')
             ->sum('amount');
     }
 
@@ -180,10 +197,11 @@ class TransactionService
      */
     public function getTodaysWithdrawals(Student $student)
     {
-        return WalletTransaction::where('student_id', $student->id)
-            ->where('type', 'DEBIT')
-            ->where('payment_method', 'cash')
-            ->whereDate('created_at', Carbon::today())
+        return WalletTransaction::query()
+            ->where('student_id', '=', $student->id, 'and')
+            ->where('type', '=', 'DEBIT', 'and')
+            ->where('payment_method', '=', 'cash', 'and')
+            ->whereDate('created_at', '=', Carbon::today(), 'and')
             ->orderBy('created_at', 'desc')
             ->get();
     }
@@ -239,8 +257,8 @@ class TransactionService
                         throw new \Exception('PIN salah. Periksa kembali PIN Anda.');
                     }
 
-                    if (($student->wallet_balance - $amount) < 10000) {
-                        throw new \Exception('Saldo minimal Rp 10.000 harus tersisa di dompet. Saldo tersedia: Rp ' . number_format(max(0, $student->wallet_balance - 10000), 0, ',', '.'));
+                    if (($student->wallet_balance - $amount) < 500000) {
+                        throw new \Exception('Saldo minimal Rp 500.000 harus tersisa di dompet. Saldo tersedia: Rp ' . number_format(max(0, $student->wallet_balance - 500000), 0, ',', '.'));
                     }
                 }
             } else {
@@ -281,6 +299,8 @@ class TransactionService
                 'school_id' => $operator->school_id,
                 'invoice_code' => 'PURC-' . strtoupper(uniqid()),
                 'student_id' => $student?->id,
+                'student_name' => $student?->full_name,
+                'student_nis' => $student?->nis,
                 'pic_user_id' => $operator->id,
                 'operator_id' => $operator->id,
                 'type' => 'DEBIT',
@@ -296,8 +316,8 @@ class TransactionService
 
             // 7. Save Transaction Items
             foreach ($items as $itemData) {
-                $product = \App\Models\Product::find($itemData['product_id']);
-                \App\Models\WalletTransactionItem::create([
+                $product = Product::query()->find($itemData['product_id'], ['*']);
+                WalletTransactionItem::query()->create([
                     'wallet_transaction_id' => $transaction->id,
                     'product_id' => $product->id,
                     'product_name' => $product->name,
@@ -316,9 +336,11 @@ class TransactionService
 
                 $product->update(['stock' => $newStock]);
 
-                \App\Models\ProductMovement::create([
+                ProductMovement::query()->create([
                     'school_id' => $product->school_id,
                     'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'product_sku' => $product->sku,
                     'type' => 'OUT',
                     'quantity' => $qty,
                     'stock_before' => $oldStock,

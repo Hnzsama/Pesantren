@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('title');
             $table->foreignUlid('school_id')->nullable()->constrained('schools')->cascadeOnDelete(); // Consolidation
             $table->foreignUlid('student_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('student_name')->nullable();
+            $table->string('student_nis')->nullable();
             $table->date('date_achieved');
             $table->text('description');
             $table->json('images');

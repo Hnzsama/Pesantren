@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class WalletTransaction extends Model
 {
     /** @use HasFactory<\Database\Factories\WalletTransactionFactory> */
-    use \App\Traits\HasSchoolScope, HasFactory, HasUlids;
+    use \App\Traits\HasSchoolScope, HasFactory, HasUlids, \App\Traits\HasStudentSnapshot;
 
     const PAYMENT_METHOD_GATEWAY = 'gateway';
 
@@ -22,6 +22,8 @@ class WalletTransaction extends Model
         'school_id',
         'invoice_code',
         'student_id',
+        'student_name',
+        'student_nis',
         'operator_id',
         'pic_user_id',
         'type',

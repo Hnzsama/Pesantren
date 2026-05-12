@@ -9,12 +9,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Achievement extends Model
 {
-    use HasFactory, HasUlids;
+    use HasFactory, HasUlids, \App\Traits\HasStudentSnapshot;
 
     protected $fillable = [
         'title',
         'school_id',
         'student_id',
+        'student_name',
+        'student_nis',
         'date_achieved',
         'description',
         'images',

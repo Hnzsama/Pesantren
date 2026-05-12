@@ -67,7 +67,7 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
         }
 
         $user = auth()->user();
-        $schoolId = $user->hasRole('admin') ? $user->school_id : null;
+        $schoolId = $user->hasAnyRole(['admin', 'guru']) ? $user->school_id : null;
 
         $studentCard = StudentCard::query()
             ->with('student')
@@ -121,6 +121,8 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
                 ActivityAttendance::create([
                     'school_id' => $schoolId,
                     'student_id' => $student->id,
+                    'student_name' => $student->full_name,
+                    'student_nis' => $student->nis,
                     'activity_id' => $activityId,
                     'date' => $this->sessionDate,
                     'status' => 'present',
@@ -165,7 +167,7 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
     public function with(): array
     {
         $user = auth()->user();
-        $schoolId = $user->hasRole('admin') ? $user->school_id : null;
+        $schoolId = $user->hasAnyRole(['admin', 'guru']) ? $user->school_id : null;
 
         $levels = Level::query()
             ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
@@ -184,7 +186,9 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
     }
 }; ?>
 
+@assets
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+@endassets
 
 <div class="min-h-screen flex flex-col items-center justify-center p-6 text-zinc-800 dark:text-zinc-100">
     <div class="w-full max-w-4xl space-y-8">

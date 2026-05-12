@@ -95,8 +95,8 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component {
                     </flux:table.cell>
                     <flux:table.cell>
                         <div class="flex flex-col">
-                            <span class="font-medium text-sm">{{ $movement->product->name }}</span>
-                            <span class="text-xs text-zinc-500">{{ $movement->product->sku }}</span>
+                            <span class="font-medium text-sm">{{ $movement->product_name }}</span>
+                            <span class="text-xs text-zinc-500">{{ $movement->product_sku ?? '-' }}</span>
                         </div>
                     </flux:table.cell>
                     <flux:table.cell>

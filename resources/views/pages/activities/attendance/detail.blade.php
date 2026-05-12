@@ -74,15 +74,14 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component
     public function activities()
     {
         $user = auth()->user();
-        $schoolId = $user->hasRole('admin') ? $user->school_id : null;
+        $schoolId = $user->hasAnyRole(['admin', 'guru']) ? $user->school_id : null;
 
         return Activity::query()
             ->where('type', 'daily')
             ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
             ->when($this->level_id, function ($q) {
-                $q->where(function ($query) {
-                    $query->where('level_id', $this->level_id)
-                        ->orWhereNull('level_id');
+                $q->whereHas('levels', function ($query) {
+                    $query->where('levels.id', $this->level_id);
                 });
             })
             ->orderBy('name')
@@ -93,7 +92,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component
     public function students()
     {
         $user = auth()->user();
-        $schoolId = $user->hasRole('admin') ? $user->school_id : null;
+        $schoolId = $user->hasAnyRole(['admin', 'guru']) ? $user->school_id : null;
 
         return Student::query()
             ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
@@ -102,6 +101,15 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component
             ->where('status', 'ACTIVE')
             ->orderBy('full_name')
             ->paginate(10);
+    }
+
+    protected function hasApprovedPermission($studentId, $date)
+    {
+        return \App\Models\StudentPermission::where('student_id', $studentId)
+            ->where('status', 'approved')
+            ->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date)
+            ->exists();
     }
 
     #[Livewire\Attributes\Computed]
@@ -117,7 +125,18 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component
 
         $matrix = [];
         foreach ($records as $record) {
-            $matrix[$record->student_id][$record->activity_id] = $record;
+            $matrix[$record->student_id][$record->activity_id] = $record->status;
+        }
+
+        // Fill in automatic permissions for students who don't have a record yet
+        foreach ($this->students as $student) {
+            if ($this->hasApprovedPermission($student->id, $this->date)) {
+                foreach ($this->activities as $activity) {
+                    if (!isset($matrix[$student->id][$activity->id])) {
+                        $matrix[$student->id][$activity->id] = 'permission';
+                    }
+                }
+            }
         }
 
         return $matrix;
@@ -138,6 +157,8 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component
             ],
             [
                 'school_id' => $student->school_id,
+                'student_name' => $student->full_name,
+                'student_nis' => $student->nis,
                 'status' => $status,
             ]
         );
@@ -194,8 +215,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component
 
                         @foreach ($this->activities as $activity)
                             @php
-                                $record = $this->attendanceMatrix[$student->id][$activity->id] ?? null;
-                                $currentStatus = $record?->status ?? 'absent'; 
+                                $currentStatus = $this->attendanceMatrix[$student->id][$activity->id] ?? 'absent'; 
                             @endphp
                             <flux:table.cell align="center">
                                 <div class="flex items-center justify-center gap-1">
@@ -204,7 +224,7 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component
                                         size="sm" :variant="$currentStatus === 'present' ? 'primary' : 'ghost'" color="green"
                                         icon="check-circle"
                                         :class="$currentStatus === 'present' ? '' : 'text-green-600 dark:text-green-400'"
-                                        title="Hadir" class="!px-2" />
+                                        title="Hadir" class="!px-2" :disabled="auth()->user()->hasRole('guru')" />
 
                                     {{-- Izin --}}
                                     <flux:button
@@ -212,14 +232,14 @@ new #[Lazy] #[Layout('layouts.app')] class extends Component
                                         size="sm" :variant="$currentStatus === 'permission' ? 'primary' : 'ghost'"
                                         color="orange" icon="information-circle"
                                         :class="$currentStatus === 'permission' ? '' : 'text-orange-600 dark:text-orange-400'"
-                                        title="Izin" class="!px-2" />
+                                        title="Izin" class="!px-2" :disabled="auth()->user()->hasRole('guru')" />
 
                                     {{-- Alpha --}}
                                     <flux:button wire:click="setStatus('{{ $student->id }}', '{{ $activity->id }}', 'absent')"
                                         size="sm" :variant="$currentStatus === 'absent' ? 'primary' : 'ghost'" color="red"
                                         icon="x-circle"
                                         :class="$currentStatus === 'absent' ? '' : 'text-red-600 dark:text-red-400'"
-                                        title="Alpha" class="!px-2" />
+                                        title="Alpha" class="!px-2" :disabled="auth()->user()->hasRole('guru')" />
                                 </div>
                             </flux:table.cell>
                         @endforeach

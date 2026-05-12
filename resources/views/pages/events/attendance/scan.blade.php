@@ -102,6 +102,8 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
             EventAttendance::create([
                 'event_id' => $this->event->id,
                 'student_id' => $student->id,
+                'student_name' => $student->full_name,
+                'student_nis' => $student->nis,
                 'check_in_time' => now(),
                 'status' => 'present',
             ]);
