@@ -2,7 +2,7 @@
 
 Dokumentasi ini merinci seluruh skema database sistem Pesantren menggunakan format **DBML**. Seluruh tabel menggunakan **ULID** sebagai Primary Key untuk skalabilitas dan integritas data multi-tenancy.
 
-![ERD Diagram](./documentation/erd.png)
+![ERD Diagram](../public/erd.png)
 
 ```dbml
 // --- CORE TABLES ---
