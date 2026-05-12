@@ -76,6 +76,14 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // --- ADMIN ONLY ROUTES (ACADEMIC & MASTER) ---
+    // --- ADMIN MASTER DATA (STRICT) ---
+    Route::middleware(['role:admin|super_admin'])->group(function () {
+        Route::livewire('santri', 'pages::students.index')->name('students.index');
+        Route::livewire('santri/import', 'pages::students.import')->name('students.import');
+        Route::livewire('users', 'pages::users.index')->name('users');
+    });
+
+    // --- ADMIN & GURU SHARED (ACADEMIC & STUDENT PROGRESS) ---
     Route::middleware(['role:admin|super_admin|guru'])->group(function () {
         Route::livewire('admin/dashboard', 'pages::dashboard.admin-stat')->name('admin.dashboard');
         Route::livewire('berita', 'pages::news.index')->name('news.index');
@@ -88,15 +96,12 @@ Route::middleware(['auth'])->group(function () {
         Route::livewire('prestasi', 'pages::achievements.index')->name('achievements.index');
         Route::livewire('prestasi/create', 'pages::achievements.create')->name('achievements.create');
         Route::livewire('kajian', 'pages::video-lectures.index')->name('lectures.index');
-        Route::livewire('santri', 'pages::students.index')->name('students.index');
-        Route::livewire('santri/import', 'pages::students.import')->name('students.import');
         Route::livewire('santri/kenaikan-kelas', 'pages::students.promotion')->name('students.promotion');
         Route::livewire('guardians', 'pages::guardians.index')->name('guardians.index');
         Route::livewire('perizinan', 'pages::student-permissions.index')->name('student-permissions.index');
         Route::livewire('jadwal-sowan', 'pages::sowan-schedules.index')->name('sowan-schedules.index');
         Route::livewire('feedback', 'pages::feedback.index')->name('feedback.index');
         Route::livewire('kartu-santri', 'pages::student-cards.index')->name('student-cards.index');
-        Route::livewire('users', 'pages::users.index')->name('users');
         
         Route::get('/student-cards/{id}/preview', [\App\Http\Controllers\StudentCardPrintController::class, 'preview'])->name('student-cards.preview');
         Route::post('/student-cards/download-zip', [\App\Http\Controllers\StudentCardPrintController::class, 'download'])->name('student-cards.download-zip');

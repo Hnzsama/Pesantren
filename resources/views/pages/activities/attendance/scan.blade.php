@@ -67,7 +67,7 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
         }
 
         $user = auth()->user();
-        $schoolId = $user->hasAnyRole(['admin', 'guru']) ? $user->school_id : null;
+        $schoolId = auth()->user()->school_id;
 
         $studentCard = StudentCard::query()
             ->with('student')
@@ -94,7 +94,7 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
             return;
         }
 
-        if (!in_array($student->level_id, $this->selectedLevels)) {
+        if (!in_array((string)$student->level_id, array_map('strval', (array)$this->selectedLevels))) {
             $this->setLastScan($cardNumber, $student, 'error', 'Kelas tidak sesuai', []);
             $this->scanInput = '';
             return;
@@ -119,7 +119,7 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
                 }
             } else {
                 ActivityAttendance::create([
-                    'school_id' => $schoolId,
+                    'school_id' => $student->school_id,
                     'student_id' => $student->id,
                     'student_name' => $student->full_name,
                     'student_nis' => $student->nis,
@@ -167,7 +167,7 @@ new #[Lazy] #[Layout('layouts.standalone')] class extends Component {
     public function with(): array
     {
         $user = auth()->user();
-        $schoolId = $user->hasAnyRole(['admin', 'guru']) ? $user->school_id : null;
+        $schoolId = auth()->user()->school_id;
 
         $levels = Level::query()
             ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))

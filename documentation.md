@@ -6,9 +6,10 @@ Selamat datang di dokumentasi teknis Sistem SIAP. Dokumentasi ini telah dipecah 
 1. [Analisis Fitur & Hak Akses (RBAC)](documentation/features_rbac.md)
 2. [Arsitektur Aliran Data (DFD)](documentation/dfd.md)
 3. [Diagram Urutan (Sequence Diagram)](documentation/sequence.md)
-4. [Diagram Aktivitas & Flowchart](documentation/activity_flowchart.md)
-5. [Skema Database (DBML)](documentation/database.md)
-6. [Hasil Pengujian (Pest PHP)](documentation/testing.md)
+4. [Diagram Aktivitas (Activity Diagram)](documentation/activity.md)
+5. [Diagram Alir (Flowchart)](documentation/flowchart.md)
+6. [Skema Database (DBML)](documentation/database.md)
+7. [Hasil Pengujian (Pest PHP)](documentation/testing.md)
 
 ---
 

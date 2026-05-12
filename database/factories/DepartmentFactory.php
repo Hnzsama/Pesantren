@@ -17,7 +17,10 @@ class DepartmentFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'school_id' => \App\Models\School::factory(),
+            'name' => $this->faker->company(),
+            'code' => strtoupper($this->faker->lexify('???')),
+            'description' => $this->faker->sentence(),
         ];
     }
 }

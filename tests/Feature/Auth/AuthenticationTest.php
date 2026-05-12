@@ -12,7 +12,9 @@ test('login screen can be rendered', function () {
 });
 
 test('users can authenticate using the login screen', function () {
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
     $user = User::factory()->create();
+    $user->assignRole('admin');
 
     $response = $this->post(route('login.store'), [
         'email' => $user->email,
@@ -27,7 +29,9 @@ test('users can authenticate using the login screen', function () {
 });
 
 test('users can not authenticate with invalid password', function () {
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
     $user = User::factory()->create();
+    $user->assignRole('admin');
 
     $response = $this->post(route('login.store'), [
         'email' => $user->email,
@@ -49,7 +53,9 @@ test('users with two factor enabled are redirected to two factor challenge', fun
         'confirmPassword' => true,
     ]);
 
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
     $user = User::factory()->withTwoFactor()->create();
+    $user->assignRole('admin');
 
     $response = $this->post(route('login.store'), [
         'email' => $user->email,
@@ -61,7 +67,9 @@ test('users with two factor enabled are redirected to two factor challenge', fun
 });
 
 test('users can logout', function () {
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
     $user = User::factory()->create();
+    $user->assignRole('admin');
 
     $response = $this->actingAs($user)->post(route('logout'));
 

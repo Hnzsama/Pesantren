@@ -17,7 +17,10 @@ class LevelFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'school_id' => \App\Models\School::factory(),
+            'department_id' => \App\Models\Department::factory(),
+            'name' => $this->faker->word(),
+            'grade_level' => $this->faker->numberBetween(1, 12),
         ];
     }
 }
