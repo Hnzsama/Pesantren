@@ -336,6 +336,60 @@ new #[Lazy] class extends Component {
         );
         $this->modal('bulk-generate-modal')->close();
     }
+    
+    public function export()
+    {
+        // Get the same query as the main list but without pagination
+        $query = Student::query()
+            ->with(['school', 'level:id,name,department_id', 'level.department:id,name', 'parent:id,name', 'card:id,student_id,card_number'])
+            ->orderBy('full_name');
+
+        if ($this->tab === 'incomplete') {
+            $query->incomplete();
+        }
+
+        $query->when($this->search, fn($q) => $q->where(function ($sub) {
+            $sub->where('full_name', 'like', '%' . $this->search . '%')
+                ->orWhere('nis', 'like', '%' . $this->search . '%');
+        }))
+            ->when($this->levelFilter, fn($q) => $q->where('level_id', $this->levelFilter))
+            ->when($this->departmentFilter, fn($q) => $q->whereHas('level', fn($l) => $l->where('department_id', $this->departmentFilter)))
+            ->when($this->parentFilter, fn($q) => $q->where('parent_user_id', $this->parentFilter));
+
+        $students = $query->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="data_santri_' . date('Ymd_His') . '.csv"',
+        ];
+
+        $callback = function () use ($students) {
+            $file = fopen('php://output', 'w');
+            // UTF-8 BOM for Excel compatibility
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Using semicolon as delimiter for better compatibility with Indonesian Excel settings
+            fputcsv($file, ['NIS', 'Nama Lengkap', 'Jenis Kelamin', 'Jenjang', 'Kelas', 'Wali Santri', 'Saldo Dompet', 'Nomor Kartu', 'Status'], ';');
+
+            foreach ($students as $student) {
+                fputcsv($file, [
+                    $student->nis,
+                    $student->full_name,
+                    $student->gender === 'L' ? 'Laki-laki' : 'Perempuan',
+                    $student->level->department->name ?? '-',
+                    $student->level->name ?? '-',
+                    $student->parent->name ?? '-',
+                    $student->wallet_balance,
+                    $student->card->card_number ?? '-',
+                    $student->status,
+                ], ';');
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }; ?>
 
 <div class="w-full">
@@ -348,6 +402,9 @@ new #[Lazy] class extends Component {
             <div class="flex flex-col sm:flex-row flex-wrap gap-2 w-full sm:w-auto">
                 <flux:button variant="ghost" icon="arrow-up-tray" href="{{ route('students.import') }}" wire:navigate>
                     {{ __('Import') }}
+                </flux:button>
+                <flux:button variant="ghost" icon="arrow-down-tray" wire:click="export">
+                    {{ __('Export') }}
                 </flux:button>
                 <flux:button variant="ghost" icon="credit-card" wire:click="openBulkGenerateModal">
                     {{ __('Generate Kartu') }}
