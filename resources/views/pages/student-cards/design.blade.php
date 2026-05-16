@@ -52,6 +52,7 @@ new #[Lazy] class extends Component {
 
     public $cachedLogo = null;
     public $noBackground = false;
+    public $onlyQrCode = false; // Added: Download only QR code
     public $processingBatchId = null;
     public $processingTotal = 0;
     public $processingCount = 0;
@@ -104,7 +105,7 @@ new #[Lazy] class extends Component {
         
         $items = [];
         $qrRenderer = new \BaconQrCode\Renderer\ImageRenderer(
-            new \BaconQrCode\Renderer\RendererStyle\RendererStyle(120, 1),
+            new \BaconQrCode\Renderer\RendererStyle\RendererStyle(400, 1),
             new \BaconQrCode\Renderer\Image\SvgImageBackEnd()
         );
         $qrWriter = new \BaconQrCode\Writer($qrRenderer);
@@ -115,6 +116,26 @@ new #[Lazy] class extends Component {
 
             $qrCodeSvg = $qrWriter->writeString($card->card_number);
             $student = $card->student;
+            
+            if ($this->onlyQrCode) {
+                // Render QR code as PNG using Node.js
+                $html = "
+                <div class=\"card-container\" style=\"display: inline-block; padding: 20px; background: white; border-radius: 10px;\">
+                    <div style=\"width: 400px; height: 400px;\">
+                        {$qrCodeSvg}
+                    </div>
+                </div>";
+                
+                $safeName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $student->full_name);
+                $imageName = "{$student->nis}_{$safeName}.png";
+                $imagePath = "{$tempDir}/{$imageName}";
+                
+                $items[] = [
+                    'html' => $html,
+                    'path' => $imagePath
+                ];
+                continue;
+            }
             
             // Render BOTH sides
             foreach(['front', 'back'] as $side) {
@@ -150,7 +171,7 @@ new #[Lazy] class extends Component {
                 \Log::error("Node batch render failed: " . implode("\n", $output));
             }
             
-            $this->processingCount += count($cardIds); // We increment by number of cards, not items (items = cards * 2)
+            $this->processingCount += count($cardIds); // We increment by number of cards
         } catch (\Exception $e) {
             \Log::error("Failed to process batch chunk: " . $e->getMessage());
         } finally {
@@ -174,7 +195,6 @@ new #[Lazy] class extends Component {
                  $filename = $file->getFilename();
                  $parts = explode('_', $filename);
                  $nis = $parts[0];
-                 $side = str_replace('.png', '', end($parts)); // front or back
                  
                  $folderPath = "Kartu";
                  
@@ -238,7 +258,8 @@ new #[Lazy] class extends Component {
                         @endforeach
                     </flux:select>
 
-                    <flux:checkbox wire:model.live="noBackground" label="Hanya Kartu (Tanpa Background)" />
+                    <flux:checkbox wire:model.live="noBackground" label="Tanpa Background (Hanya Konten)" />
+                    <flux:checkbox wire:model.live="onlyQrCode" label="Hanya Unduh QR Code" />
 
                     <flux:select wire:model.live="statusFilter" label="Status Kartu" placeholder="Pilih status...">
                         <flux:select.option value="request_print">Menunggu Cetak</flux:select.option>
@@ -257,7 +278,7 @@ new #[Lazy] class extends Component {
                         </flux:text>
 
                         <flux:button wire:click="initBatchDownload" variant="primary" icon="printer" class="w-full" :disabled="!$schoolFilter || !$previewCardId">
-                            Unduh ZIP (Depan & Belakang)
+                            {{ $onlyQrCode ? 'Unduh ZIP (Hanya QR Code)' : 'Unduh ZIP (Depan & Belakang)' }}
                         </flux:button>
                     </div>
                 </div>
@@ -374,6 +395,7 @@ new #[Lazy] class extends Component {
             ids: @entangle('processingIds'),
             isProcessing: @entangle('isProcessing'),
             downloadUrl: @entangle('zipDownloadUrl'),
+            onlyQrCode: @entangle('onlyQrCode'),
             status: 'Menyiapkan...',
             
             async startProcess(ids) {
@@ -388,7 +410,9 @@ new #[Lazy] class extends Component {
                 for (let i = 0; i < this.ids.length; i += chunkSize) {
                     const chunk = this.ids.slice(i, i + chunkSize);
                     this.current = Math.min(i + chunkSize, this.total);
-                    this.status = `Memproses kartu ${this.current} dari ${this.total} (Depan & Belakang)...`;
+                    this.status = this.onlyQrCode 
+                        ? `Memproses QR Code ${this.current} dari ${this.total}...`
+                        : `Memproses kartu ${this.current} dari ${this.total} (Depan & Belakang)...`;
                     this.progress = Math.round((this.current / this.total) * 100);
                     
                     await @this.processBatchChunk(chunk);
