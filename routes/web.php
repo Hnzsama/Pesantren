@@ -14,31 +14,16 @@ Route::middleware('guest')->group(function () {
 Route::get('dashboard', function () {
     $user = Auth::user();
 
-    if ($user->hasRole('super_admin')) {
-        return redirect()->route('super-admin.dashboard');
-    }
-
-    if ($user->hasRole('admin') || $user->hasRole('bendahara')) {
-        return redirect()->route('admin.dashboard');
-    }
-
-    if ($user->hasRole('admin_koperasi')) {
-        return redirect()->route('koperasi.dashboard');
-    }
-
-    if ($user->hasRole('kasir')) {
-        return redirect()->route('koperasi.dashboard');
-    }
-
-    if ($user->hasRole('guru')) {
-        return redirect()->route('guru.dashboard');
-    }
-
-    if ($user->hasRole('pengurus')) {
-        return redirect()->route('activities.attendance.index');
-    }
-
-    return view('dashboard');
+    // Menggunakan match untuk redireksi yang lebih presisi berdasarkan role utama
+    return match (true) {
+        $user->hasRole('super_admin') => redirect()->route('super-admin.dashboard'),
+        $user->hasRole('admin') => redirect()->route('admin.dashboard'),
+        $user->hasRole('bendahara') => redirect()->route('admin.financial'),
+        $user->hasRole('admin_koperasi') || $user->hasRole('kasir') => redirect()->route('koperasi.dashboard'),
+        $user->hasRole('guru') => redirect()->route('guru.dashboard'),
+        $user->hasRole('pengurus') => redirect()->route('activities.attendance.index'),
+        default => view('dashboard'),
+    };
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
@@ -80,12 +65,12 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:admin|super_admin'])->group(function () {
         Route::livewire('santri', 'pages::students.index')->name('students.index');
         Route::livewire('santri/import', 'pages::students.import')->name('students.import');
+        Route::livewire('admin/dashboard', 'pages::dashboard.admin-stat')->name('admin.dashboard');
         Route::livewire('users', 'pages::users.index')->name('users');
     });
 
     // --- ADMIN & GURU SHARED (ACADEMIC & STUDENT PROGRESS) ---
     Route::middleware(['role:admin|super_admin|guru'])->group(function () {
-        Route::livewire('admin/dashboard', 'pages::dashboard.admin-stat')->name('admin.dashboard');
         Route::livewire('berita', 'pages::news.index')->name('news.index');
         Route::livewire('tahun-ajaran', 'pages::academic-years.index')->name('academic-years.index');
         Route::livewire('semester', 'pages::semesters.index')->name('semesters.index');
@@ -134,6 +119,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:admin_koperasi|kasir|admin|super_admin'])->prefix('koperasi')->group(function () {
         Route::livewire('dashboard', 'pages::dashboard.cooperative-stat')->name('koperasi.dashboard');
         Route::livewire('riwayat', 'pages::dashboard.cooperative.history')->name('koperasi.history');
+        Route::get('export', [\App\Http\Controllers\CooperativeReportController::class, 'export'])->name('cooperative.export');
     });
 
     Route::middleware(['role:admin_koperasi|admin|super_admin'])->prefix('koperasi')->group(function () {
@@ -141,7 +127,6 @@ Route::middleware(['auth'])->group(function () {
         Route::livewire('stok-opname', 'pages::dashboard.cooperative.stock-opname')->name('koperasi.stock-opname');
         Route::livewire('riwayat-stok', 'pages::dashboard.cooperative.stock-history')->name('koperasi.stock-history');
         Route::livewire('kasir', 'pages::dashboard.cooperative.cashiers')->name('koperasi.cashiers');
-        Route::get('export', [\App\Http\Controllers\CooperativeReportController::class, 'export'])->name('cooperative.export');
     });
 
     // --- KASIR KOPERASI (POS) ---
