@@ -335,7 +335,7 @@ new #[Lazy] #[Layout('layouts.app')] #[Title('Dashboard')] class extends Compone
                         <div class="flex-1 space-y-1">
                             <div class="flex items-center justify-between">
                                 <flux:text class="text-xs font-bold text-blue-600 dark:text-sky-400">
-                                    {{ $activity->student->full_name }}
+                                    {{ $activity->student?->full_name ?? 'Sistem' }}
                                 </flux:text>
                                 <flux:text size="xs" class="text-zinc-400 font-medium">
                                     {{ $activity->created_at->format('H:i') }}
@@ -346,7 +346,7 @@ new #[Lazy] #[Layout('layouts.app')] #[Title('Dashboard')] class extends Compone
                             </flux:text>
                             <div class="flex items-center gap-2 pt-1">
                                 <flux:icon name="building-library" class="w-3 h-3 text-zinc-400" />
-                                <flux:text size="xs" class="text-zinc-500">{{ $activity->school->name }}</flux:text>
+                                <flux:text size="xs" class="text-zinc-500">{{ $activity->school?->name ?? 'N/A' }}</flux:text>
                             </div>
                         </div>
                     </div>

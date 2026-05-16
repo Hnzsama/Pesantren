@@ -41,15 +41,15 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\StudentReport::observe(\App\Observers\StudentReportObserver::class);
         \App\Models\SowanSchedule::observe(\App\Observers\SowanScheduleObserver::class);
 
-        if (app()->environment('local')) {
-            URL::forceScheme('https');
-            URL::forceRootUrl(config('app.url'));
+        // if (app()->environment('local')) {
+        //     URL::forceScheme('https');
+        //     URL::forceRootUrl(config('app.url'));
 
-            // Fix for Livewire/Signed URLs behind Ngrok
-            if (str_contains(config('app.url'), 'https://')) {
-                $this->app['request']->server->set('HTTPS', 'on');
-            }
-        }
+        //     // Fix for Livewire/Signed URLs behind Ngrok
+        //     if (str_contains(config('app.url'), 'https://')) {
+        //         $this->app['request']->server->set('HTTPS', 'on');
+        //     }
+        // }
     }
 
     protected function configureDefaults(): void
