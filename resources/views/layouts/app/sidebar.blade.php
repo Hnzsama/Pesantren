@@ -14,20 +14,22 @@
         </flux:sidebar.header>
 
         <flux:sidebar.nav>
+            @if(!auth()->user()->hasRole('pengurus') && !auth()->user()->hasRole('bendahara'))
             <flux:sidebar.group :heading="__('Platform')">
                 <flux:sidebar.item icon="home" :href="route('dashboard')"
-                    :current="request()->routeIs(['dashboard', 'super-admin.dashboard', 'admin.dashboard', 'koperasi.dashboard'])"
+                    :current="request()->routeIs(['dashboard', 'super-admin.dashboard', 'admin.dashboard', 'koperasi.dashboard', 'guru.dashboard'])"
                     wire:navigate>
                     {{ __('Dashboard') }}
                 </flux:sidebar.item>
 
-                @if(!auth()->user()->hasRole('admin_koperasi') && !auth()->user()->hasRole('kasir') && !auth()->user()->hasRole('bendahara') && !auth()->user()->hasRole('pengurus'))
+                @if(!auth()->user()->hasRole('admin_koperasi') && !auth()->user()->hasRole('kasir') && !auth()->user()->hasRole('bendahara'))
                 <flux:sidebar.item icon="newspaper" :href="route('news.index')"
                     :current="request()->routeIs('news.index')" wire:navigate>
                     {{ __('Berita & Pengumuman') }}
                 </flux:sidebar.item>
                 @endif
             </flux:sidebar.group>
+            @endif
 
             @role('admin')
             <flux:sidebar.group :heading="__('Akademik')">
